@@ -888,8 +888,10 @@ if_attach_internal(struct ifnet *ifp, int vmove, struct if_clone *ifc)
 		ifp->if_transmit = if_transmit;
 		ifp->if_qflush = if_qflush;
 	}
-	if (ifp->if_input == NULL)
+	if (ifp->if_input == NULL) {
+		printf("if input default\n");
 		ifp->if_input = if_input_default;
+	}
 
 	if (ifp->if_requestencap == NULL)
 		ifp->if_requestencap = if_requestencap_default;
@@ -3984,7 +3986,7 @@ if_transmit(struct ifnet *ifp, struct mbuf *m)
 static void
 if_input_default(struct ifnet *ifp __unused, struct mbuf *m)
 {
-
+	printf("fbsd: if_input_default got packet\n");
 	m_freem(m);
 }
 
@@ -4388,6 +4390,7 @@ if_vlantrunkinuse(if_t ifp)
 int
 if_input(if_t ifp, struct mbuf* sendmp)
 {
+	printf("if_input - func\n");
 	(*((struct ifnet *)ifp)->if_input)((struct ifnet *)ifp, sendmp);
 	return (0);
 

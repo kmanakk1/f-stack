@@ -31,9 +31,9 @@
 extern "C" {
 #endif
 
-// dpdk argc, argv, max argc: 16, member of dpdk_config
-#define DPDK_CONFIG_NUM 16
-#define DPDK_CONFIG_MAXLEN 256
+// dpdk argc, argv, max argc: 32, member of dpdk_config
+#define DPDK_CONFIG_NUM 32
+#define DPDK_CONFIG_MAXLEN 512
 #define DPDK_MAX_LCORE 128
 #define PCAP_SNAP_MINLEN 94
 #define PCAP_SAVE_MINLEN (2<<22)
@@ -124,6 +124,14 @@ struct ff_freebsd_cfg {
     struct ff_freebsd_cfg *next;
 };
 
+struct ff_net_tap_cfg {
+    int tapid;
+    char *iface;
+    char *remote;
+    char *mac;
+    int persist;
+};
+
 struct ff_config {
     char *filename;
     struct {
@@ -150,6 +158,7 @@ struct ff_config {
         int promiscuous;
         int nb_vdev;
         int nb_bond;
+        int nb_net_tap;
         int numa_on;
         int tso;
         int tx_csum_offoad_skip;
@@ -175,6 +184,7 @@ struct ff_config {
         struct ff_port_cfg *port_cfgs;
         struct ff_vdev_cfg *vdev_cfgs;
         struct ff_bond_cfg *bond_cfgs;
+        struct ff_net_tap_cfg *tap_cfgs;
     } dpdk;
 
     struct {

@@ -2233,6 +2233,10 @@ flush_fwd_rx_queues(void)
 				do {
 					nb_rx = rte_eth_rx_burst(port_id, rxq,
 						pkts_burst, MAX_PKT_BURST);
+					
+					if(nb_rx != 0)
+						printf("RX: %d bytes\n", nb_rx);
+					
 					for (i = 0; i < nb_rx; i++)
 						rte_pktmbuf_free(pkts_burst[i]);
 

@@ -426,6 +426,7 @@ VNET_SYSUNINIT(ip, SI_SUB_PROTO_DOMAIN, SI_ORDER_THIRD, ip_destroy, NULL);
 void
 ip_direct_input(struct mbuf *m)
 {
+	printf("ip_direct_input\n");
 	struct ip *ip;
 	int hlen;
 
@@ -451,6 +452,7 @@ ip_direct_input(struct mbuf *m)
 void
 ip_input(struct mbuf *m)
 {
+	printf("ip_input: nh handler\n");
 	struct rm_priotracker in_ifa_tracker;
 	struct ip *ip = NULL;
 	struct in_ifaddr *ia = NULL;
@@ -633,7 +635,7 @@ tooshort:
 		}
 	}
 passin:
-
+printf("ip_input passin section\n");
 	/*
 	 * Process options and, if not destined for us,
 	 * ship it on.  ip_dooptions returns 1 when an
@@ -791,13 +793,16 @@ passin:
 	return;
 
 ours:
+	printf("ip_input: ours section\n");
 #ifdef IPSTEALTH
 	/*
 	 * IPSTEALTH: Process non-routing options only
 	 * if the packet is destined for us.
 	 */
-	if (V_ipstealth && hlen > sizeof (struct ip) && ip_dooptions(m, 1))
+	if (V_ipstealth && hlen > sizeof (struct ip) && ip_dooptions(m, 1)) {
+		printf("ip_input: ipstealth\n");
 		return;
+	}
 #endif /* IPSTEALTH */
 
 	/*
@@ -807,17 +812,21 @@ ours:
 	if (ip->ip_off & htons(IP_MF | IP_OFFMASK)) {
 		/* XXXGL: shouldn't we save & set m_flags? */
 		m = ip_reass(m);
-		if (m == NULL)
+		if (m == NULL) {
+			printf("ip_input: reassembly failed\n");
 			return;
+		}
 		ip = mtod(m, struct ip *);
 		/* Get the header length of the reassembled packet */
 		hlen = ip->ip_hl << 2;
 	}
-
+	printf("reassembly\n");
 #if defined(IPSEC) || defined(IPSEC_SUPPORT)
 	if (IPSEC_ENABLED(ipv4)) {
-		if (IPSEC_INPUT(ipv4, m, hlen, ip->ip_p) != 0)
+		if (IPSEC_INPUT(ipv4, m, hlen, ip->ip_p) != 0) {
+			printf("ip_input: ipsec\n");
 			return;
+		}
 	}
 #endif /* IPSEC */
 
@@ -825,10 +834,11 @@ ours:
 	 * Switch out to protocol's input routine.
 	 */
 	IPSTAT_INC(ips_delivered);
-
+	printf("ip_input: delivered to proto stack\n");
 	(*inetsw[ip_protox[ip->ip_p]].pr_input)(&m, &hlen, ip->ip_p);
 	return;
 bad:
+	printf("ip_input: bad packet\n");
 	m_freem(m);
 }
 

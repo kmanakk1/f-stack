@@ -74,7 +74,7 @@ parse_lcore_mask(struct ff_config *cfg, const char *coremask)
     char c;
     int val;
     uint16_t *proc_lcore;
-    char buf[RTE_MAX_LCORE] = {0};
+    char buf[RTE_MAX_LCORE+1] = {0};
     char zero[RTE_MAX_LCORE] = {0};
 
     if (coremask == NULL)
@@ -588,6 +588,60 @@ vdev_cfg_handler(struct ff_config *cfg, const char *section,
 }
 
 static int
+tap_cfg_handler(struct ff_config *cfg, const char *section,
+    const char *name, const char *value) {
+
+    if (cfg->dpdk.nb_net_tap == 0) {
+        fprintf(stderr, "tap_cfg_handler: must config dpdk.nb_net_tap first\n");
+        return 0;
+    }
+
+    if (cfg->dpdk.vdev_cfgs == NULL) {
+        struct ff_vdev_cfg *vc = calloc(cfg->dpdk.nb_net_tap, sizeof(struct ff_net_tap_cfg));
+        if (vc == NULL) {
+            fprintf(stderr, "tap_cfg_handler malloc failed\n");
+            return 0;
+        }
+        cfg->dpdk.vdev_cfgs = vc;
+    }
+
+    int tapid;
+    int ret = sscanf(section, "net_tap%d", &tapid);
+    if (ret != 1) {
+        fprintf(stderr, "tap_cfg_handler section[%s] error\n", section);
+        return 0;
+    }
+
+    /* just return true if vdevid >= nb_vdev because it has no effect */
+    if (tapid > cfg->dpdk.nb_net_tap) {
+        fprintf(stderr, "tap_cfg_handler section[%s] bigger than max tap id\n", section);
+        return 1;
+    }
+
+    printf("tap%d\n", tapid);
+
+    struct ff_net_tap_cfg *cur = &cfg->dpdk.tap_cfgs[tapid];
+    cur->tapid = tapid;
+
+    if (strcmp(name, "iface") == 0) {
+        cur->iface = strdup(value);
+    } else if (strcmp(name, "remote") == 0) {
+        cur->remote = strdup(value);
+    } else if (strcmp(name, "mac") == 0) {
+        cur->mac = strdup(value);
+    } else if (strcmp(name, "persist") == 0) {
+        cur->persist = atoi(value);
+    }
+
+    if(!cur->iface) {
+        fprintf(stderr, "tap_cfg_handler net_tap must specify iface\n");
+        return 0;
+    }
+
+    return 1;
+}
+
+static int
 bond_cfg_handler(struct ff_config *cfg, const char *section,
     const char *name, const char *value) {
 
@@ -677,6 +731,8 @@ ini_parse_handler(void* user, const char* section, const char* name,
         return parse_port_list(pconfig, value);
     } else if (MATCH("dpdk", "nb_vdev")) {
         pconfig->dpdk.nb_vdev = atoi(value);
+    } else if (MATCH("dpdk", "nb_net_tap")) {
+        pconfig->dpdk.nb_net_tap = atoi(value);
     } else if (MATCH("dpdk", "nb_bond")) {
         pconfig->dpdk.nb_bond = atoi(value);
     } else if (MATCH("dpdk", "promiscuous")) {
@@ -723,6 +779,8 @@ ini_parse_handler(void* user, const char* section, const char* name,
         return freebsd_conf_handler(pconfig, "sysctl", name, value);
     } else if (strncmp(section, "port", 4) == 0) {
         return port_cfg_handler(pconfig, section, name, value);
+    } else if(strncmp(section, "net_tap", 7)) {
+        return tap_cfg_handler(pconfig, section, name, value);
     } else if (strncmp(section, "vdev", 4) == 0) {
         return vdev_cfg_handler(pconfig, section, name, value);
     } else if (strncmp(section, "bond", 4) == 0) {
@@ -825,6 +883,28 @@ dpdk_args_setup(struct ff_config *cfg)
             dpdk_argv[n++] = strdup(temp);
         }
     }
+
+    // kaesi: add tap config
+    /*if(cfg->dpdk.nb_net_tap) {
+        for(i=0; i<cfg->dpdk.nb_net_tap; i++) {
+            printf("adding TAP config - %s\n", cfg->dpdk.tap_cfgs[i].iface);
+            sprintf(temp, "--vdev=net_tap%d,iface=%s",
+                cfg->dpdk.tap_cfgs[i].tapid,
+                cfg->dpdk.tap_cfgs[i].iface);
+            if(cfg->dpdk.tap_cfgs[i].remote){
+                sprintf(temp2, ",remote=%s",
+                    cfg->dpdk.tap_cfgs[i].remote);
+                    strcat(temp, temp2);
+            } if(cfg->dpdk.tap_cfgs[i].mac){
+                sprintf(temp2, ",mac=%s",
+                    cfg->dpdk.tap_cfgs[i].remote);
+                    strcat(temp, temp2);
+            } if(cfg->dpdk.tap_cfgs[i].persist) {
+                strcat(temp, ",persist");
+            } // ...
+            dpdk_argv[n++] = strdup(temp);
+        }
+    }*/
 
     if (cfg->dpdk.nb_bond) {
         for (i=0; i<cfg->dpdk.nb_bond; i++) {

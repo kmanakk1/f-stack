@@ -55,7 +55,7 @@ ifdead_output(struct ifnet *ifp, struct mbuf *m, const struct sockaddr *sa,
 static void
 ifdead_input(struct ifnet *ifp, struct mbuf *m)
 {
-
+	printf("ifdead_input\n");
 	m_freem(m);
 }
 

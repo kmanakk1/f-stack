@@ -86,7 +86,6 @@ int loop(void *arg)
             int available = (int)event.data;
             do {
                 int nclientfd = ff_accept(clientfd, NULL, NULL);
-                printf("Accepted client: %d\n", clientfd);
                 if (nclientfd < 0) {
                     printf("ff_accept failed:%d, %s\n", errno,
                         strerror(errno));

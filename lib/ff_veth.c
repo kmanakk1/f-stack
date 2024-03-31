@@ -97,6 +97,7 @@ ff_veth_config(struct ff_veth_softc *sc, struct ff_port_cfg *cfg)
     inet_pton(AF_INET, cfg->netmask, &sc->netmask);
     inet_pton(AF_INET, cfg->broadcast, &sc->broadcast);
     inet_pton(AF_INET, cfg->gateway, &sc->gateway);
+    printf("ff_veth_config: IP: %s\n", cfg->addr);
 
     if (cfg->nb_vip) {
         for (i = 0, j = 0; i < cfg->nb_vip; ++i) {
@@ -354,6 +355,7 @@ ff_mbuf_get(void *p, void *m, void *data, uint16_t len)
 void
 ff_veth_process_packet(void *arg, void *m)
 {
+    printf("ff_veth_process_packet\n");
     struct ifnet *ifp = (struct ifnet *)arg;
     struct mbuf *mb = (struct mbuf *)m;
 
@@ -445,9 +447,13 @@ ff_veth_setvaddr(struct ff_veth_softc *sc, struct ff_port_cfg *cfg)
 
     if (cfg->vip_ifname) {
         strlcpy(req.ifra_name, cfg->vip_ifname, IFNAMSIZ);
+        printf("setvaddr cfg: %s\n", cfg->vip_ifname);
     } else {
         strlcpy(req.ifra_name, sc->ifp->if_dname, IFNAMSIZ);
+        printf("setvaddr sc: %s\n", sc->ifp->if_dname);
     }
+
+    printf("setvaddr: %s\n", cfg->vip_ifname);
 
     struct sockaddr_in sa;
     bzero(&sa, sizeof(sa));

@@ -25,6 +25,8 @@
  */
 
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "ff_api.h"
 #include "ff_config.h"
@@ -39,6 +41,15 @@ ff_init(int argc, char * const argv[])
     ret = ff_load_config(argc, argv);
     if (ret < 0)
         exit(1);
+
+    //dpdk_argv[dpdk_argc++] = strdup("--file-prefix=fstack");
+    dpdk_argv[dpdk_argc++] = strdup("--vdev=net_tap,iface=dtap0");
+    printf("DPDK_argv: ");
+    for(int x=0; x<dpdk_argc; x++) {
+        printf(" %s ", dpdk_argv[x]);
+    }
+    printf("\n");
+
 
     ret = ff_dpdk_init(dpdk_argc, (char **)&dpdk_argv);
     if (ret < 0)

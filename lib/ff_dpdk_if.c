@@ -1266,9 +1266,11 @@ ff_dpdk_init(int argc, char **argv)
 static void
 ff_veth_input(const struct ff_dpdk_if_context *ctx, struct rte_mbuf *pkt)
 {
+    printf("ff_veth_input\n");
     uint8_t rx_csum = ctx->hw_features.rx_csum;
     if (rx_csum) {
         if (pkt->ol_flags & (RTE_MBUF_F_RX_IP_CKSUM_BAD | RTE_MBUF_F_RX_L4_CKSUM_BAD)) {
+            printf("ff_veth_input: bad cksum\n");
             rte_pktmbuf_free(pkt);
             return;
         }
@@ -1279,6 +1281,7 @@ ff_veth_input(const struct ff_dpdk_if_context *ctx, struct rte_mbuf *pkt)
 
     void *hdr = ff_mbuf_gethdr(pkt, pkt->pkt_len, data, len, rx_csum);
     if (hdr == NULL) {
+        printf("ff_veth_input: no header\n");
         rte_pktmbuf_free(pkt);
         return;
     }
@@ -1434,6 +1437,7 @@ static inline void
 process_packets(uint16_t port_id, uint16_t queue_id, struct rte_mbuf **bufs,
     uint16_t count, const struct ff_dpdk_if_context *ctx, int pkts_from_ring)
 {
+    printf("process_packets\n");
     struct lcore_conf *qconf = &lcore_conf;
     uint16_t nb_queues = qconf->nb_queue_list[port_id];
 
@@ -1449,6 +1453,8 @@ process_packets(uint16_t port_id, uint16_t queue_id, struct rte_mbuf **bufs,
 
         void *data = rte_pktmbuf_mtod(rtem, void*);
         uint16_t len = rte_pktmbuf_data_len(rtem);
+
+        printf("data length: %d\n", (int)len);
 
         if (!pkts_from_ring) {
             ff_traffic.rx_packets += rtem->nb_segs;
@@ -2056,6 +2062,8 @@ main_loop(void *arg)
                 MAX_PKT_BURST);
             if (nb_rx == 0)
                 continue;
+            
+            printf("RX: %d\n", nb_rx);
 
             idle = 0;
 
@@ -2064,6 +2072,7 @@ main_loop(void *arg)
                 rte_prefetch0(rte_pktmbuf_mtod(
                         pkts_burst[j], void *));
             }
+            printf("rte_prefetch0\n");
 
             /* Prefetch and handle already prefetched packets */
             for (j = 0; j < (nb_rx - PREFETCH_OFFSET); j++) {

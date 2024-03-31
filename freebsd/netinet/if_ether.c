@@ -429,7 +429,7 @@ arprequest_internal(struct ifnet *ifp, const struct in_addr *sip,
 	linkhdrsize = sizeof(linkhdr);
 	error = arp_fillheader(ifp, ah, 1, linkhdr, &linkhdrsize);
 	if (error != 0 && error != EAFNOSUPPORT) {
-		ARP_LOG(LOG_ERR, "Failed to calculate ARP header on %s: %d\n",
+		printf("Failed to calculate ARP header on %s: %d\n",
 		    if_name(ifp), error);
 		return (error);
 	}
@@ -678,6 +678,7 @@ arpresolve(struct ifnet *ifp, int is_gw, struct mbuf *m,
 static void
 arpintr(struct mbuf *m)
 {
+	printf("arpintr: arp handler\n");
 	struct arphdr *ar;
 	struct ifnet *ifp;
 	char *layer;
@@ -687,7 +688,7 @@ arpintr(struct mbuf *m)
 
 	if (m->m_len < sizeof(struct arphdr) &&
 	    ((m = m_pullup(m, sizeof(struct arphdr))) == NULL)) {
-		ARP_LOG(LOG_NOTICE, "packet with short header received on %s\n",
+		printf("packet with short header received on %s\n",
 		    if_name(ifp));
 		return;
 	}
@@ -697,7 +698,7 @@ arpintr(struct mbuf *m)
 	if (m->m_len <  arphdr_len(ar)) {
 		m = m_pullup(m, arphdr_len(ar));
 		if (m == NULL) {
-			ARP_LOG(LOG_NOTICE, "short packet received on %s\n",
+			printf("short packet received on %s\n",
 			    if_name(ifp));
 			return;
 		}
@@ -728,7 +729,7 @@ arpintr(struct mbuf *m)
 			hlen = 16;
 		break;
 	default:
-		ARP_LOG(LOG_NOTICE,
+		printf(
 		    "packet with unknown hardware format 0x%02d received on "
 		    "%s\n", ntohs(ar->ar_hrd), if_name(ifp));
 		m_freem(m);
@@ -736,7 +737,7 @@ arpintr(struct mbuf *m)
 	}
 
 	if (hlen != 0 && hlen != ar->ar_hln) {
-		ARP_LOG(LOG_NOTICE,
+		printf(
 		    "packet with invalid %s address length %d received on %s\n",
 		    layer, ar->ar_hln, if_name(ifp));
 		m_freem(m);
@@ -747,6 +748,7 @@ arpintr(struct mbuf *m)
 	switch (ntohs(ar->ar_pro)) {
 #ifdef INET
 	case ETHERTYPE_IP:
+
 		in_arpinput(m);
 		return;
 #endif
@@ -791,6 +793,7 @@ SYSCTL_INT(_net_link_ether_inet, OID_AUTO, allow_multicast, CTLFLAG_RW,
 static void
 in_arpinput(struct mbuf *m)
 {
+	printf("in_arpinput\n");
 	struct rm_priotracker in_ifa_tracker;
 	struct arphdr *ah;
 	struct ifnet *ifp = m->m_pkthdr.rcvif;
@@ -835,13 +838,13 @@ in_arpinput(struct mbuf *m)
 	 * a protocol length not equal to an IPv4 address.
 	 */
 	if (ah->ar_pln != sizeof(struct in_addr)) {
-		ARP_LOG(LOG_NOTICE, "requested protocol length != %zu\n",
+		printf("requested protocol length != %zu\n",
 		    sizeof(struct in_addr));
 		goto drop;
 	}
 
 	if (allow_multicast == 0 && ETHER_IS_MULTICAST(ar_sha(ah))) {
-		ARP_LOG(LOG_NOTICE, "%*D is multicast\n",
+		printf("%*D is multicast\n",
 		    ifp->if_addrlen, (u_char *)ar_sha(ah), ":");
 		goto drop;
 	}
@@ -926,21 +929,24 @@ in_arpinput(struct mbuf *m)
 	ifa_ref(&ia->ia_ifa);
 	IN_IFADDR_RUNLOCK(&in_ifa_tracker);
 match:
+	printf("in_arpinput: match section\n");
 	if (!enaddr)
 		enaddr = (u_int8_t *)IF_LLADDR(ifp);
 	carped = (ia->ia_ifa.ifa_carp != NULL);
 	myaddr = ia->ia_addr.sin_addr;
 	ifa_free(&ia->ia_ifa);
-	if (!bcmp(ar_sha(ah), enaddr, ifp->if_addrlen))
+	if (!bcmp(ar_sha(ah), enaddr, ifp->if_addrlen)) {
+		printf("in_arpinput: drop - selfsend\n");
 		goto drop;	/* it's from me, ignore it. */
+	}
 	if (!bcmp(ar_sha(ah), ifp->if_broadcastaddr, ifp->if_addrlen)) {
-		ARP_LOG(LOG_NOTICE, "link address is broadcast for IP address "
+		printf("link address is broadcast for IP address "
 		    "%s!\n", inet_ntoa_r(isaddr, addrbuf));
 		goto drop;
 	}
 
 	if (ifp->if_addrlen != ah->ar_hln) {
-		ARP_LOG(LOG_WARNING, "from %*D: addr len: new %d, "
+		printf( "from %*D: addr len: new %d, "
 		    "i/f %d (ignored)\n", ifp->if_addrlen,
 		    (u_char *) ar_sha(ah), ":", ah->ar_hln,
 		    ifp->if_addrlen);
@@ -955,7 +961,7 @@ match:
 	 */
 	if (!bridged && !carped && isaddr.s_addr == myaddr.s_addr &&
 	    myaddr.s_addr != 0) {
-		ARP_LOG(LOG_ERR, "%*D is using my IP address %s on %s!\n",
+		printf("%*D is using my IP address %s on %s!\n",
 		   ifp->if_addrlen, (u_char *)ar_sha(ah), ":",
 		   inet_ntoa_r(isaddr, addrbuf), ifp->if_xname);
 		itaddr = myaddr;
@@ -1139,7 +1145,7 @@ reply:
 	 * by if_output().
 	 */
 	if (error != 0 && error != EAFNOSUPPORT) {
-		ARP_LOG(LOG_ERR, "Failed to calculate ARP header on %s: %d\n",
+		printf("Failed to calculate ARP header on %s: %d\n",
 		    if_name(ifp), error);
 		return;
 	}
@@ -1154,6 +1160,7 @@ reply:
 	return;
 
 drop:
+	printf("in_arpinput: dropping request\n");
 	m_freem(m);
 }
 #endif
@@ -1178,7 +1185,7 @@ arp_check_update_lle(struct arphdr *ah, struct in_addr isaddr, struct ifnet *ifp
 	/* the following is not an error when doing bridging */
 	if (!bridged && la->lle_tbl->llt_ifp != ifp) {
 		if (log_arp_wrong_iface)
-			ARP_LOG(LOG_WARNING, "%s is on %s "
+			printf( "%s is on %s "
 			    "but got reply from %*D on %s\n",
 			    inet_ntoa_r(isaddr, addrbuf),
 			    la->lle_tbl->llt_ifp->if_xname,

@@ -433,6 +433,7 @@ netisr_register(const struct netisr_handler *nhp)
 	KASSERT(netisr_proto[proto].np_handler == NULL,
 	    ("%s(%u, %s): handler present", __func__, proto, name));
 
+	printf("%s(%u, %s): name registered\n", __func__, proto, name);
 	netisr_proto[proto].np_name = name;
 	netisr_proto[proto].np_handler = nhp->nh_handler;
 	netisr_proto[proto].np_m2flow = nhp->nh_m2flow;
@@ -1046,6 +1047,7 @@ netisr_queue_internal(u_int proto, struct mbuf *m, u_int cpuid)
 int
 netisr_queue_src(u_int proto, uintptr_t source, struct mbuf *m)
 {
+	printf("netisr_queue_src\n");
 #ifdef NETISR_LOCKING
 	struct rm_priotracker tracker;
 #endif
@@ -1098,6 +1100,7 @@ netisr_queue(u_int proto, struct mbuf *m)
 int
 netisr_dispatch_src(u_int proto, uintptr_t source, struct mbuf *m)
 {
+	printf("netisr_dispatch_src\n");
 #ifdef NETISR_LOCKING
 	struct rm_priotracker tracker;
 #endif
@@ -1116,6 +1119,8 @@ netisr_dispatch_src(u_int proto, uintptr_t source, struct mbuf *m)
 	npp = &netisr_proto[proto];
 	KASSERT(npp->np_handler != NULL, ("%s: invalid proto %u", __func__,
 	    proto));
+	
+	printf("netisr: dispatch: %s\n", npp->np_name);
 
 #ifdef VIMAGE
 	if (V_netisr_enable[proto] == 0) {
@@ -1125,8 +1130,10 @@ netisr_dispatch_src(u_int proto, uintptr_t source, struct mbuf *m)
 #endif
 
 	dispatch_policy = netisr_get_dispatch(npp);
-	if (dispatch_policy == NETISR_DISPATCH_DEFERRED)
+	if (dispatch_policy == NETISR_DISPATCH_DEFERRED) {
+		printf("netisr: queueing dispatch\n");
 		return (netisr_queue_src(proto, source, m));
+	}
 
 	/*
 	 * If direct dispatch is forced, then unconditionally dispatch
@@ -1136,6 +1143,7 @@ netisr_dispatch_src(u_int proto, uintptr_t source, struct mbuf *m)
 	 * to always being forced to directly dispatch.
 	 */
 	if (dispatch_policy == NETISR_DISPATCH_DIRECT) {
+		printf("netisr: direct dispatch\n");
 		nwsp = DPCPU_PTR(nws);
 		npwp = &nwsp->nws_work[proto];
 		npwp->nw_dispatched++;
