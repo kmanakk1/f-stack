@@ -1821,6 +1821,7 @@ skip_alloc:
 	 */
 	printf("3way shake\n");
 	if (syncache_respond(sc, m, TH_SYN|TH_ACK) == 0) {
+		printf("worked\n");
 		if (V_tcp_syncookies && V_tcp_syncookiesonly && sc != &scs)
 			syncache_free(sc);
 		else if (sc != &scs)

@@ -587,6 +587,7 @@ vdev_cfg_handler(struct ff_config *cfg, const char *section,
     return 1;
 }
 
+/*
 static int
 tap_cfg_handler(struct ff_config *cfg, const char *section,
     const char *name, const char *value) {
@@ -612,7 +613,7 @@ tap_cfg_handler(struct ff_config *cfg, const char *section,
         return 0;
     }
 
-    /* just return true if vdevid >= nb_vdev because it has no effect */
+    // just return true if vdevid >= nb_vdev because it has no effect
     if (tapid > cfg->dpdk.nb_net_tap) {
         fprintf(stderr, "tap_cfg_handler section[%s] bigger than max tap id\n", section);
         return 1;
@@ -639,7 +640,7 @@ tap_cfg_handler(struct ff_config *cfg, const char *section,
     }
 
     return 1;
-}
+}*/
 
 static int
 bond_cfg_handler(struct ff_config *cfg, const char *section,
@@ -779,8 +780,8 @@ ini_parse_handler(void* user, const char* section, const char* name,
         return freebsd_conf_handler(pconfig, "sysctl", name, value);
     } else if (strncmp(section, "port", 4) == 0) {
         return port_cfg_handler(pconfig, section, name, value);
-    } else if(strncmp(section, "net_tap", 7)) {
-        return tap_cfg_handler(pconfig, section, name, value);
+    /*} else if(strncmp(section, "net_tap", 7)) {
+        return tap_cfg_handler(pconfig, section, name, value);*/
     } else if (strncmp(section, "vdev", 4) == 0) {
         return vdev_cfg_handler(pconfig, section, name, value);
     } else if (strncmp(section, "bond", 4) == 0) {

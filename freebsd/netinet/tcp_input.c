@@ -1080,7 +1080,7 @@ printf("tcp:part5\n");
 		 * the flag is only ACK.  A successful lookup creates a new
 		 * socket appended to the listen queue in SYN_RECEIVED state.
 		 */
-		 printf("tcp: part6 check syn ack\n");
+		 printf("tcp: part6 check syn ack - thflags: %x\n", thflags);
 		if ((thflags & (TH_RST|TH_ACK|TH_SYN)) == TH_ACK) {
 			/*
 			 * Parse the TCP options here because

@@ -1817,6 +1817,7 @@ send_burst(struct lcore_conf *qconf, uint16_t n, uint8_t port)
     }
 
     ret = rte_eth_tx_burst(port, queueid, m_table, n);
+    printf("TX: %d\n", ret);
     ff_traffic.tx_packets += ret;
     uint16_t i;
     for (i = 0; i < ret; i++) {
