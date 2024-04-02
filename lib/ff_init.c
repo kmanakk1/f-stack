@@ -52,16 +52,21 @@ ff_init(int argc, char * const argv[])
 
 
     ret = ff_dpdk_init(dpdk_argc, (char **)&dpdk_argv);
-    if (ret < 0)
+    if (ret < 0) {
+        printf("error initializing dpdk\n");
         exit(1);
+    }
 
     ret = ff_freebsd_init();
-    if (ret < 0)
+    if (ret < 0){
+        printf("error initializing freebsd\n");
         exit(1);
-
+    }
     ret = ff_dpdk_if_up();
-    if (ret < 0)
+    if (ret < 0){
+        printf("error initializing net interface\n");
         exit(1);
+    }
 
     return 0;
 }
