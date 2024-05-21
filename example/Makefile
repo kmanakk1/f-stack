@@ -18,9 +18,9 @@ LIBS+= -Wl,--no-whole-archive -lrt -lm -ldl -lcrypto -pthread -lnuma
 
 TARGET="helloworld"
 all:
-	cc ${CFLAGS} -DINET6 -o ${TARGET} main.c ${LIBS}
-	cc ${CFLAGS}-o ${TARGET}_simple simple.c ${LIBS}
-	cc ${CFLAGS} -o ${TARGET}_epoll main_epoll.c ${LIBS}
+	${CC} ${CFLAGS} -DINET6 -o ${TARGET} main.c ${LIBS}
+	${CC} ${CFLAGS}-o ${TARGET}_simple simple.c ${LIBS}
+	${CC} ${CFLAGS} -o ${TARGET}_epoll main_epoll.c ${LIBS}
 
 .PHONY: clean
 clean:

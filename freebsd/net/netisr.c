@@ -433,7 +433,6 @@ netisr_register(const struct netisr_handler *nhp)
 	KASSERT(netisr_proto[proto].np_handler == NULL,
 	    ("%s(%u, %s): handler present", __func__, proto, name));
 
-	printf("%s(%u, %s): name registered\n", __func__, proto, name);
 	netisr_proto[proto].np_name = name;
 	netisr_proto[proto].np_handler = nhp->nh_handler;
 	netisr_proto[proto].np_m2flow = nhp->nh_m2flow;

@@ -929,6 +929,7 @@ ether_demux(struct ifnet *ifp, struct mbuf *m)
 		break;
 #endif
 	default:
+		printf("ether_demux: unknown type: %X\n", ether_type);
 		goto discard;
 	}
 	printf("ether_demux: netisr_dispatch %d\n", isr);

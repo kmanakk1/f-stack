@@ -587,7 +587,7 @@ vdev_cfg_handler(struct ff_config *cfg, const char *section,
     return 1;
 }
 
-/*
+
 static int
 tap_cfg_handler(struct ff_config *cfg, const char *section,
     const char *name, const char *value) {
@@ -597,13 +597,13 @@ tap_cfg_handler(struct ff_config *cfg, const char *section,
         return 0;
     }
 
-    if (cfg->dpdk.vdev_cfgs == NULL) {
-        struct ff_vdev_cfg *vc = calloc(cfg->dpdk.nb_net_tap, sizeof(struct ff_net_tap_cfg));
+    if (cfg->dpdk.tap_cfgs == NULL) {
+        struct ff_net_tap_cfg *vc = calloc(cfg->dpdk.nb_net_tap, sizeof(struct ff_net_tap_cfg));
         if (vc == NULL) {
             fprintf(stderr, "tap_cfg_handler malloc failed\n");
             return 0;
         }
-        cfg->dpdk.vdev_cfgs = vc;
+        cfg->dpdk.tap_cfgs = vc;
     }
 
     int tapid;
@@ -640,7 +640,7 @@ tap_cfg_handler(struct ff_config *cfg, const char *section,
     }
 
     return 1;
-}*/
+}
 
 static int
 bond_cfg_handler(struct ff_config *cfg, const char *section,
@@ -780,8 +780,8 @@ ini_parse_handler(void* user, const char* section, const char* name,
         return freebsd_conf_handler(pconfig, "sysctl", name, value);
     } else if (strncmp(section, "port", 4) == 0) {
         return port_cfg_handler(pconfig, section, name, value);
-    /*} else if(strncmp(section, "net_tap", 7)) {
-        return tap_cfg_handler(pconfig, section, name, value);*/
+    } else if(strncmp(section, "net_tap", 7) == 0) {
+        return tap_cfg_handler(pconfig, section, name, value);
     } else if (strncmp(section, "vdev", 4) == 0) {
         return vdev_cfg_handler(pconfig, section, name, value);
     } else if (strncmp(section, "bond", 4) == 0) {
@@ -886,7 +886,7 @@ dpdk_args_setup(struct ff_config *cfg)
     }
 
     // kaesi: add tap config
-    /*if(cfg->dpdk.nb_net_tap) {
+    if(cfg->dpdk.nb_net_tap && cfg->dpdk.tap_cfgs) {
         for(i=0; i<cfg->dpdk.nb_net_tap; i++) {
             printf("adding TAP config - %s\n", cfg->dpdk.tap_cfgs[i].iface);
             sprintf(temp, "--vdev=net_tap%d,iface=%s",
@@ -905,7 +905,7 @@ dpdk_args_setup(struct ff_config *cfg)
             } // ...
             dpdk_argv[n++] = strdup(temp);
         }
-    }*/
+    }
 
     if (cfg->dpdk.nb_bond) {
         for (i=0; i<cfg->dpdk.nb_bond; i++) {

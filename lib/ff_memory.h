@@ -40,8 +40,8 @@ extern "C" {
 /*
  * Configurable number of RX/TX ring descriptors
  */
-#define RX_QUEUE_SIZE 512
-#define TX_QUEUE_SIZE 512
+#define RX_QUEUE_SIZE 2048 
+#define TX_QUEUE_SIZE 2048 // orig: 512
 
 /*
  * Try to avoid TX buffering if we have at least MAX_TX_BURST packets to send.

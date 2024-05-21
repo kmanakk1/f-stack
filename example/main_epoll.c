@@ -9,6 +9,7 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <assert.h>
+#include <x86intrin.h>
 
 #include "ff_config.h"
 #include "ff_api.h"
@@ -19,6 +20,7 @@
 
 struct epoll_event ev;
 struct epoll_event events[MAX_EVENTS];
+uint64_t statsavgh=0, statsavgl=0;
 
 int epfd;
 int sockfd;
@@ -58,7 +60,8 @@ char html[] =
 int loop(void *arg)
 {
     /* Wait for events to happen */
-
+    uint64_t duration=0, start = 0, end = 0, calls=0;
+    start = _rdtsc();
     int nevents = ff_epoll_wait(epfd,  events, MAX_EVENTS, 0);
     int i;
 
@@ -92,12 +95,22 @@ int loop(void *arg)
                     ff_write( events[i].data.fd, html, sizeof(html) - 1);
                 } else {
                     ff_epoll_ctl(epfd, EPOLL_CTL_DEL,  events[i].data.fd, NULL);
-                    ff_close( events[i].data.fd);
+                    ff_close(events[i].data.fd);
                 }
             } else {
                 printf("unknown event: %8.8X\n", events[i].events);
             }
         }
+    }
+    end = _rdtsc();
+    duration = end - start;
+    statsavgh += duration;
+    statsavgl++;
+
+    if(statsavgl > 1000) {
+        duration = statsavgh/statsavgl;
+        fprintf(stdout, "time taken: %ld cycles\n", duration);
+        statsavgh = statsavgl = 0;
     }
 }
 

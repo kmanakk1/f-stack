@@ -175,6 +175,38 @@ ff_dpdk_deregister_if(struct ff_dpdk_if_context *ctx)
     free(ctx);
 }
 
+static void print_nic_stats() {
+    struct rte_eth_stats stats;
+    uint16_t port_id;
+
+    printf("==========Nic Stats=============\n");
+    fflush(stdout);
+    static const char *nic_stats_border = "########################";
+
+    int i, nb_ports;
+    nb_ports = ff_global_cfg.dpdk.nb_ports;
+    for (i = 0; i < nb_ports; i++) {
+        port_id = ff_global_cfg.dpdk.portid_list[i];
+        memset(&stats, 0, sizeof(stats));
+        int ret;
+        ret = rte_eth_stats_get(port_id, &stats);
+        if (ret != 0) {
+            fprintf(stderr,
+                "%s: Error: failed to get stats (port %u): %d",
+                __func__, port_id, ret);
+            return;
+        }
+        printf("\n  %s NIC statistics for port %-2d %s\n",
+            nic_stats_border, port_id, nic_stats_border);
+
+        printf("  RX-packets: %-10"PRIu64" RX-missed: %-10"PRIu64" RX-bytes:  "
+            "%-"PRIu64"\n", stats.ipackets, stats.imissed, stats.ibytes);
+        printf("  RX-errors: %-"PRIu64"\n", stats.ierrors);
+        printf("  RX-nombuf:  %-10"PRIu64"\n", stats.rx_nombuf);
+        printf("  TX-packets: %-10"PRIu64" TX-errors: %-10"PRIu64" TX-bytes:  "
+            "%-"PRIu64"\n", stats.opackets, stats.oerrors, stats.obytes);
+    }
+}
 static void
 check_all_ports_link_status(void)
 {
@@ -707,8 +739,8 @@ init_port_start(void)
                     (dev_info.rx_offload_capa & RTE_ETH_RX_OFFLOAD_UDP_CKSUM) &&
                     (dev_info.rx_offload_capa & RTE_ETH_RX_OFFLOAD_TCP_CKSUM)) {
                     printf("RX checksum offload supported\n");
-                    port_conf.rxmode.offloads |= RTE_ETH_RX_OFFLOAD_CHECKSUM;
-                    pconf->hw_features.rx_csum = 1;
+                    //port_conf.rxmode.offloads |= RTE_ETH_RX_OFFLOAD_CHECKSUM;
+                    //pconf->hw_features.rx_csum = 1;
                 }
 
                 if (ff_global_cfg.dpdk.tx_csum_offoad_skip == 0) {
@@ -1200,6 +1232,8 @@ ff_dpdk_init(int argc, char **argv)
         rte_exit(EXIT_FAILURE, "Error with EAL initialization\n");
     }
 
+    printf("[DPDK] init EAL\n");
+
     numa_on = ff_global_cfg.dpdk.numa_on;
 
     idle_sleep = ff_global_cfg.dpdk.idle_sleep;
@@ -1207,12 +1241,13 @@ ff_dpdk_init(int argc, char **argv)
         BURST_TX_DRAIN_US : ff_global_cfg.dpdk.pkt_tx_delay;
 
     init_lcore_conf();
-
+    printf("[DPDK] init lcore\n");
     init_mem_pool();
-
+    printf("[DPDK] init mem pool\n");
     init_dispatch_ring();
-
+    printf("[DPDK] init dispatch ring\n");
     init_msg_ring();
+    printf("[DPDK] init msg ring\n");
 
 #ifdef FF_KNI
     enable_kni = ff_global_cfg.kni.enable;
@@ -1266,7 +1301,8 @@ ff_dpdk_init(int argc, char **argv)
 static void
 ff_veth_input(const struct ff_dpdk_if_context *ctx, struct rte_mbuf *pkt)
 {
-    printf("ff_veth_input\n");
+    if(ff_global_cfg.dpdk.log_level > 2)
+        printf("ff_veth_input\n");
     uint8_t rx_csum = ctx->hw_features.rx_csum;
     if (rx_csum) {
         if (pkt->ol_flags & (RTE_MBUF_F_RX_IP_CKSUM_BAD | RTE_MBUF_F_RX_L4_CKSUM_BAD)) {
@@ -1437,7 +1473,8 @@ static inline void
 process_packets(uint16_t port_id, uint16_t queue_id, struct rte_mbuf **bufs,
     uint16_t count, const struct ff_dpdk_if_context *ctx, int pkts_from_ring)
 {
-    printf("process_packets\n");
+    if(ff_global_cfg.dpdk.log_level > 2)
+        printf("process_packets\n");
     struct lcore_conf *qconf = &lcore_conf;
     uint16_t nb_queues = qconf->nb_queue_list[port_id];
 
@@ -1454,7 +1491,8 @@ process_packets(uint16_t port_id, uint16_t queue_id, struct rte_mbuf **bufs,
         void *data = rte_pktmbuf_mtod(rtem, void*);
         uint16_t len = rte_pktmbuf_data_len(rtem);
 
-        printf("data length: %d\n", (int)len);
+        if(ff_global_cfg.dpdk.log_level > 2)
+            printf("data length: %d\n", (int)len);
 
         if (!pkts_from_ring) {
             ff_traffic.rx_packets += rtem->nb_segs;
@@ -1817,7 +1855,9 @@ send_burst(struct lcore_conf *qconf, uint16_t n, uint8_t port)
     }
 
     ret = rte_eth_tx_burst(port, queueid, m_table, n);
-    printf("TX: %d\n", ret);
+    
+    if(ff_global_cfg.dpdk.log_level > 2)
+        printf("TX: %d\n", ret);
     ff_traffic.tx_packets += ret;
     uint16_t i;
     for (i = 0; i < ret; i++) {
@@ -2064,8 +2104,10 @@ main_loop(void *arg)
             if (nb_rx == 0)
                 continue;
             
-            printf("RX: %d\n", nb_rx);
-
+            if(ff_global_cfg.dpdk.log_level > 2) {
+                printf("RX: %d\n", nb_rx);
+                print_nic_stats();
+            }
             idle = 0;
 
             /* Prefetch first packets */
@@ -2073,7 +2115,6 @@ main_loop(void *arg)
                 rte_prefetch0(rte_pktmbuf_mtod(
                         pkts_burst[j], void *));
             }
-            printf("rte_prefetch0\n");
 
             /* Prefetch and handle already prefetched packets */
             for (j = 0; j < (nb_rx - PREFETCH_OFFSET); j++) {

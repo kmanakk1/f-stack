@@ -355,7 +355,8 @@ ff_mbuf_get(void *p, void *m, void *data, uint16_t len)
 void
 ff_veth_process_packet(void *arg, void *m)
 {
-    printf("ff_veth_process_packet\n");
+    if(ff_global_cfg.dpdk.log_level > 2)
+        printf("ff_veth_process_packet\n");
     struct ifnet *ifp = (struct ifnet *)arg;
     struct mbuf *mb = (struct mbuf *)m;
 
@@ -453,7 +454,8 @@ ff_veth_setvaddr(struct ff_veth_softc *sc, struct ff_port_cfg *cfg)
         printf("setvaddr sc: %s\n", sc->ifp->if_dname);
     }
 
-    printf("setvaddr: %s\n", cfg->vip_ifname);
+    if(ff_global_cfg.dpdk.log_level > 2)
+        printf("setvaddr: %s\n", cfg->vip_ifname);
 
     struct sockaddr_in sa;
     bzero(&sa, sizeof(sa));
