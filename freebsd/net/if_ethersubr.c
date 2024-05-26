@@ -545,7 +545,6 @@ ether_input_internal(struct ifnet *ifp, struct mbuf *m)
 	etype = ntohs(eh->ether_type);
 	random_harvest_queue_ether(m, sizeof(*m));
 
-	printf("ether_input_internal: etype: %X\n", etype);
 #ifdef EXPERIMENTAL
 #if defined(INET6) && defined(INET)
 	/* draft-ietf-6man-ipv6only-flag */
@@ -555,7 +554,6 @@ ether_input_internal(struct ifnet *ifp, struct mbuf *m)
 		case ETHERTYPE_IP:
 		case ETHERTYPE_ARP:
 		case ETHERTYPE_REVARP:
-			printf("ether_input_internal: ethertype_ip/arp/revarp\n");
 			m_freem(m);
 			return;
 			/* NOTREACHED */
@@ -734,7 +732,7 @@ ether_input_internal(struct ifnet *ifp, struct mbuf *m)
 static void
 ether_nh_input(struct mbuf *m)
 {
-	printf("ether_nh_input\n");
+
 	M_ASSERTPKTHDR(m);
 	KASSERT(m->m_pkthdr.rcvif != NULL,
 	    ("%s: NULL interface pointer", __func__));
@@ -804,7 +802,6 @@ VNET_SYSUNINIT(vnet_ether_uninit, SI_SUB_PROTO_IF, SI_ORDER_ANY,
 static void
 ether_input(struct ifnet *ifp, struct mbuf *m)
 {
-	printf("ether_input\n");
 	struct epoch_tracker et;
 	struct mbuf *mn;
 	bool needs_epoch;
@@ -827,7 +824,6 @@ ether_input(struct ifnet *ifp, struct mbuf *m)
 		 * We will rely on rcvif being set properly in the deferred
 		 * context, so assert it is correct here.
 		 */
-		printf("ether_input: processing packet\n");
 		MPASS((m->m_pkthdr.csum_flags & CSUM_SND_TAG) == 0);
 		KASSERT(m->m_pkthdr.rcvif == ifp, ("%s: ifnet mismatch m %p "
 		    "rcvif %p ifp %p", __func__, m, m->m_pkthdr.rcvif, ifp));
@@ -845,7 +841,6 @@ ether_input(struct ifnet *ifp, struct mbuf *m)
 void
 ether_demux(struct ifnet *ifp, struct mbuf *m)
 {
-	printf("ether_demux\n");
 	struct ether_header *eh;
 	int i, isr;
 	u_short ether_type;
@@ -856,10 +851,8 @@ ether_demux(struct ifnet *ifp, struct mbuf *m)
 	/* Do not grab PROMISC frames in case we are re-entered. */
 	if (PFIL_HOOKED_IN(V_link_pfil_head) && !(m->m_flags & M_PROMISC)) {
 		i = pfil_run_hooks(V_link_pfil_head, &m, ifp, PFIL_IN, NULL);
-		if (i != 0 || m == NULL) {
-			printf("ether_demux: promisc\n");
+		if (i != 0 || m == NULL)
 			return;
-		}
 	}
 
 	eh = mtod(m, struct ether_header *);
@@ -872,7 +865,6 @@ ether_demux(struct ifnet *ifp, struct mbuf *m)
 	if ((m->m_flags & M_VLANTAG) &&
 	    EVL_VLANOFTAG(m->m_pkthdr.ether_vtag) != 0) {
 		if (ifp->if_vlantrunk == NULL) {
-				printf("ether_demux: vlan\n");
 			if_inc_counter(ifp, IFCOUNTER_NOPROTO, 1);
 			m_freem(m);
 			return;
@@ -890,8 +882,6 @@ ether_demux(struct ifnet *ifp, struct mbuf *m)
 	 * requested this by setting IFF_PPROMISC. Otherwise, drop them.
 	 */
 	if ((ifp->if_flags & IFF_PPROMISC) == 0 && (m->m_flags & M_PROMISC)) {
-			printf("ether_demux: discard packet - promisc\n");
-
 		m_freem(m);
 		return;
 	}
@@ -915,7 +905,6 @@ ether_demux(struct ifnet *ifp, struct mbuf *m)
 
 	case ETHERTYPE_ARP:
 		if (ifp->if_flags & IFF_NOARP) {
-				printf("ether_demux: discard arp - disabled\n");
 			/* Discard packet if ARP is disabled on interface */
 			m_freem(m);
 			return;
@@ -929,15 +918,12 @@ ether_demux(struct ifnet *ifp, struct mbuf *m)
 		break;
 #endif
 	default:
-		printf("ether_demux: unknown type: %X\n", ether_type);
 		goto discard;
 	}
-	printf("ether_demux: netisr_dispatch %d\n", isr);
 	netisr_dispatch(isr, m);
 	return;
 
 discard:
-	printf("ether_demux: discard packet\n");
 	/*
 	 * Packet is to be discarded.  If netgraph is present,
 	 * hand the packet to it for last chance processing;

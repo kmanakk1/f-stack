@@ -1490,7 +1490,6 @@ linker_addmodules(linker_file_t lf, struct mod_metadata **start,
 	}
 }
 
-#if 1
 static void
 linker_preload(void *arg)
 {
@@ -1547,7 +1546,6 @@ linker_preload(void *arg)
 	/*
 	 * First get a list of stuff in the kernel.
 	 */
-	 
 	if (linker_file_lookup_set(linker_kernel_file, MDT_SETNAME, &start,
 	    &stop, NULL) == 0)
 		linker_addmodules(linker_kernel_file, start, stop, 1);
@@ -1703,7 +1701,6 @@ fail:
 	sx_xunlock(&kld_sx);
 	/* woohoo! we made it! */
 }
-#endif
 
 SYSINIT(preload, SI_SUB_KLD, SI_ORDER_MIDDLE, linker_preload, NULL);
 

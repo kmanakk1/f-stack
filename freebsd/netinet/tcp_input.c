@@ -612,7 +612,6 @@ tcp6_input(struct mbuf **mp, int *offp, int proto)
 int
 tcp_input(struct mbuf **mp, int *offp, int proto)
 {
-	printf("tcp_input\n");
 	struct mbuf *m = *mp;
 	struct tcphdr *th = NULL;
 	struct ip *ip = NULL;
@@ -678,7 +677,6 @@ tcp_input(struct mbuf **mp, int *offp, int proto)
 			th->th_sum = in6_cksum(m, IPPROTO_TCP, off0, tlen);
 		if (th->th_sum) {
 			TCPSTAT_INC(tcps_rcvbadsum);
-			printf("drop bad - ipv6 in ipv4 stack\n");
 			goto drop;
 		}
 
@@ -695,7 +693,6 @@ tcp_input(struct mbuf **mp, int *offp, int proto)
 			goto drop;
 		}
 		iptos = (ntohl(ip6->ip6_flow) >> 20) & 0xff;
-		printf("ip6 check\n");
 	}
 #endif
 #if defined(INET) && defined(INET6)
@@ -753,10 +750,8 @@ tcp_input(struct mbuf **mp, int *offp, int proto)
 			ip->ip_hl = off0 >> 2;
 		}
 
-		printf("tcp: part1\n");
 		if (th->th_sum) {
 			TCPSTAT_INC(tcps_rcvbadsum);
-			printf("tcp: bad cksum\n");
 			goto drop;
 		}
 	}
@@ -769,7 +764,6 @@ tcp_input(struct mbuf **mp, int *offp, int proto)
 	off = th->th_off << 2;
 	if (off < sizeof (struct tcphdr) || off > tlen) {
 		TCPSTAT_INC(tcps_rcvbadoff);
-		printf("tcp: bad offset\n");
 		goto drop;
 	}
 	tlen -= off;	/* tlen is used instead of ti->ti_len */
@@ -812,7 +806,7 @@ tcp_input(struct mbuf **mp, int *offp, int proto)
 	 * Convert TCP protocol specific fields to host format.
 	 */
 	tcp_fields_to_host(th);
-	printf("tcp:part2\n");
+
 	/*
 	 * Delay dropping TCP, IP headers, IPv6 ext headers, and TCP options.
 	 */
@@ -898,8 +892,6 @@ findpcb:
 		    th->th_sport, ip->ip_dst, th->th_dport,
 		    INPLOOKUP_WILDCARD | INPLOOKUP_WLOCKPCB,
 		    m->m_pkthdr.rcvif, m);
-	
-	printf("tcp:part3\n");
 #endif /* INET */
 
 	/*
@@ -915,7 +907,7 @@ findpcb:
 		if ((V_tcp_log_in_vain == 1 && (thflags & TH_SYN)) ||
 		    V_tcp_log_in_vain == 2) {
 			if ((s = tcp_log_vain(NULL, th, (void *)ip, ip6)))
-				printf( "%s; %s: Connection attempt "
+				log(LOG_INFO, "%s; %s: Connection attempt "
 				    "to closed port\n", s, __func__);
 		}
 		/*
@@ -929,8 +921,6 @@ findpcb:
 		rstreason = BANDLIM_RST_CLOSEDPORT;
 		goto dropwithreset;
 	}
-	printf("tcp:part4\n");
-
 	INP_WLOCK_ASSERT(inp);
 	/*
 	 * While waiting for inp lock during the lookup, another thread
@@ -940,7 +930,6 @@ findpcb:
 	if (inp->inp_flags & INP_DROPPED) {
 		INP_WUNLOCK(inp);
 		inp = NULL;
-		printf("findpcb\n");
 		goto findpcb;
 	}
 	if ((inp->inp_flowtype == M_HASHTYPE_NONE) &&
@@ -1027,7 +1016,6 @@ findpcb:
 	}
 #endif
 
-printf("tcp:part5\n");
 #ifdef MAC
 	INP_WLOCK_ASSERT(inp);
 	if (mac_inpcb_check_deliver(inp, m))
@@ -1080,14 +1068,12 @@ printf("tcp:part5\n");
 		 * the flag is only ACK.  A successful lookup creates a new
 		 * socket appended to the listen queue in SYN_RECEIVED state.
 		 */
-		 printf("tcp: part6 check syn ack - thflags: %x\n", thflags);
 		if ((thflags & (TH_RST|TH_ACK|TH_SYN)) == TH_ACK) {
 			/*
 			 * Parse the TCP options here because
 			 * syncookies need access to the reflected
 			 * timestamp.
 			 */
-			 printf("ack\n");
 			tcp_dooptions(&to, optp, optlen, 0);
 			/*
 			 * NB: syncache_expand() doesn't unlock
@@ -1101,7 +1087,6 @@ printf("tcp:part5\n");
 				 * and must not produce any response back
 				 * to the sender.
 				 */
-				 printf("fail md5\n");
 				goto dropunlock;
 			} else if (rstreason == 0) {
 				/*
@@ -1110,12 +1095,10 @@ printf("tcp:part5\n");
 				 * NB: syncache did its own logging
 				 * of the failure cause.
 				 */
-				 printf("reset\n");
 				rstreason = BANDLIM_RST_OPENPORT;
 				goto dropwithreset;
 			}
 tfo_socket_result:
-			printf("tfo_socket_result\n");
 			if (so == NULL) {
 				/*
 				 * We completed the 3-way handshake
@@ -1128,7 +1111,7 @@ tfo_socket_result:
 				 * try.
 				 */
 				if ((s = tcp_log_addrs(&inc, th, NULL, NULL)))
-					printf( "%s; %s: Listen socket: "
+					log(LOG_DEBUG, "%s; %s: Listen socket: "
 					    "Socket allocation failed due to "
 					    "limits or memory shortage, %s\n",
 					    s, __func__,
@@ -1165,7 +1148,6 @@ tfo_socket_result:
 			    iptos);
 			return (IPPROTO_DONE);
 		}
-		printf("tcp:part7\n");
 		/*
 		 * Segment flag validation for new connection attempts:
 		 *
@@ -1185,7 +1167,7 @@ tfo_socket_result:
 		 */
 		if ((thflags & TH_SYN) == 0) {
 			if ((s = tcp_log_addrs(&inc, th, NULL, NULL)))
-				printf( "%s; %s: Listen socket: "
+				log(LOG_DEBUG, "%s; %s: Listen socket: "
 				    "SYN is missing, segment ignored\n",
 				    s, __func__);
 			TCPSTAT_INC(tcps_badsyn);
@@ -1196,7 +1178,7 @@ tfo_socket_result:
 		 */
 		if (thflags & TH_ACK) {
 			if ((s = tcp_log_addrs(&inc, th, NULL, NULL)))
-				printf( "%s; %s: Listen socket: "
+				log(LOG_DEBUG, "%s; %s: Listen socket: "
 				    "SYN|ACK invalid, segment rejected\n",
 				    s, __func__);
 			syncache_badack(&inc);	/* XXX: Not needed! */
@@ -1217,7 +1199,7 @@ tfo_socket_result:
 		 */
 		if ((thflags & TH_FIN) && V_drop_synfin) {
 			if ((s = tcp_log_addrs(&inc, th, NULL, NULL)))
-				printf( "%s; %s: Listen socket: "
+				log(LOG_DEBUG, "%s; %s: Listen socket: "
 				    "SYN|FIN segment ignored (based on "
 				    "sysctl setting)\n", s, __func__);
 			TCPSTAT_INC(tcps_badsyn);
@@ -1273,7 +1255,7 @@ tfo_socket_result:
 			    (ia6->ia6_flags & IN6_IFF_DEPRECATED)) {
 				ifa_free(&ia6->ia_ifa);
 				if ((s = tcp_log_addrs(&inc, th, NULL, NULL)))
-				    printf( "%s; %s: Listen socket: "
+				    log(LOG_DEBUG, "%s; %s: Listen socket: "
 					"Connection attempt to deprecated "
 					"IPv6 address rejected\n",
 					s, __func__);
@@ -1295,10 +1277,9 @@ tfo_socket_result:
 		 *	link-layer packets with a broadcast IP address. Use
 		 *	in_broadcast() to find them.
 		 */
-		 printf("tcp:part8\n");
 		if (m->m_flags & (M_BCAST|M_MCAST)) {
 			if ((s = tcp_log_addrs(&inc, th, NULL, NULL)))
-			    printf( "%s; %s: Listen socket: "
+			    log(LOG_DEBUG, "%s; %s: Listen socket: "
 				"Connection attempt from broad- or multicast "
 				"link layer address ignored\n", s, __func__);
 			goto dropunlock;
@@ -1308,7 +1289,7 @@ tfo_socket_result:
 			if (th->th_dport == th->th_sport &&
 			    IN6_ARE_ADDR_EQUAL(&ip6->ip6_dst, &ip6->ip6_src)) {
 				if ((s = tcp_log_addrs(&inc, th, NULL, NULL)))
-				    printf( "%s; %s: Listen socket: "
+				    log(LOG_DEBUG, "%s; %s: Listen socket: "
 					"Connection attempt to/from self "
 					"ignored\n", s, __func__);
 				goto dropunlock;
@@ -1316,7 +1297,7 @@ tfo_socket_result:
 			if (IN6_IS_ADDR_MULTICAST(&ip6->ip6_dst) ||
 			    IN6_IS_ADDR_MULTICAST(&ip6->ip6_src)) {
 				if ((s = tcp_log_addrs(&inc, th, NULL, NULL)))
-				    printf( "%s; %s: Listen socket: "
+				    log(LOG_DEBUG, "%s; %s: Listen socket: "
 					"Connection attempt from/to multicast "
 					"address ignored\n", s, __func__);
 				goto dropunlock;
@@ -1331,7 +1312,7 @@ tfo_socket_result:
 			if (th->th_dport == th->th_sport &&
 			    ip->ip_dst.s_addr == ip->ip_src.s_addr) {
 				if ((s = tcp_log_addrs(&inc, th, NULL, NULL)))
-				    printf( "%s; %s: Listen socket: "
+				    log(LOG_DEBUG, "%s; %s: Listen socket: "
 					"Connection attempt from/to self "
 					"ignored\n", s, __func__);
 				goto dropunlock;
@@ -1341,7 +1322,7 @@ tfo_socket_result:
 			    ip->ip_src.s_addr == htonl(INADDR_BROADCAST) ||
 			    in_broadcast(ip->ip_dst, m->m_pkthdr.rcvif)) {
 				if ((s = tcp_log_addrs(&inc, th, NULL, NULL)))
-				    printf( "%s; %s: Listen socket: "
+				    log(LOG_DEBUG, "%s; %s: Listen socket: "
 					"Connection attempt from/to broad- "
 					"or multicast address ignored\n",
 					s, __func__);
@@ -1349,7 +1330,6 @@ tfo_socket_result:
 			}
 		}
 #endif
-		printf("tcp:part9\n");
 		/*
 		 * SYN appears to be valid.  Create compressed TCP state
 		 * for syncache.
@@ -1368,7 +1348,6 @@ tfo_socket_result:
 		 * Entry added to syncache and mbuf consumed.
 		 * Only the listen socket is unlocked by syncache_add().
 		 */
-		 printf("proto done - added to syncache\n");
 		INP_INFO_WUNLOCK_ASSERT(&V_tcbinfo);
 		return (IPPROTO_DONE);
 	} else if (tp->t_state == TCPS_LISTEN) {
@@ -1395,7 +1374,6 @@ tfo_socket_result:
 #endif
 	TCP_PROBE5(receive, NULL, tp, m, tp, th);
 
-	printf("tcp: done --> do segment\n");
 	/*
 	 * Segment belongs to a connection in SYN_SENT, ESTABLISHED or later
 	 * state.  tcp_do_segment() always consumes the mbuf chain, unlocks
@@ -1405,7 +1383,6 @@ tfo_socket_result:
 	return (IPPROTO_DONE);
 
 dropwithreset:
-		printf("dropwreset\n");
 	TCP_PROBE5(receive, NULL, tp, m, tp, th);
 
 	if (inp != NULL) {
@@ -1417,7 +1394,6 @@ dropwithreset:
 	goto drop;
 
 dropunlock:
-		printf("dropunlock\n");
 	if (m != NULL)
 		TCP_PROBE5(receive, NULL, tp, m, tp, th);
 
@@ -1425,7 +1401,6 @@ dropunlock:
 		INP_WUNLOCK(inp);
 
 drop:
-		printf("drop\n");
 	INP_INFO_WUNLOCK_ASSERT(&V_tcbinfo);
 	if (s != NULL)
 		free(s, M_TCPLOG);
@@ -1565,7 +1540,7 @@ tcp_do_segment(struct mbuf *m, struct tcphdr *th, struct socket *so,
 
 	if ((thflags & TH_SYN) && (thflags & TH_FIN) && V_drop_synfin) {
 		if ((s = tcp_log_addrs(inc, th, NULL, NULL))) {
-			printf( "%s; %s: "
+			log(LOG_DEBUG, "%s; %s: "
 			    "SYN|FIN segment ignored (based on "
 			    "sysctl setting)\n", s, __func__);
 			free(s, M_TCPLOG);
@@ -1725,14 +1700,14 @@ tcp_do_segment(struct mbuf *m, struct tcphdr *th, struct socket *so,
 	if ((tp->t_flags & TF_RCVD_TSTMP) && !(to.to_flags & TOF_TS)) {
 		if (((thflags & TH_RST) != 0) || V_tcp_tolerate_missing_ts) {
 			if ((s = tcp_log_addrs(inc, th, NULL, NULL))) {
-				printf( "%s; %s: Timestamp missing, "
+				log(LOG_DEBUG, "%s; %s: Timestamp missing, "
 				    "segment processed normally\n",
 				    s, __func__);
 				free(s, M_TCPLOG);
 			}
 		} else {
 			if ((s = tcp_log_addrs(inc, th, NULL, NULL))) {
-				printf( "%s; %s: Timestamp missing, "
+				log(LOG_DEBUG, "%s; %s: Timestamp missing, "
 				    "segment silently dropped\n", s, __func__);
 				free(s, M_TCPLOG);
 			}
@@ -1747,7 +1722,7 @@ tcp_do_segment(struct mbuf *m, struct tcphdr *th, struct socket *so,
 	 */
 	if (!(tp->t_flags & TF_RCVD_TSTMP) && (to.to_flags & TOF_TS)) {
 		if ((s = tcp_log_addrs(inc, th, NULL, NULL))) {
-			printf( "%s; %s: Timestamp not expected, "
+			log(LOG_DEBUG, "%s; %s: Timestamp not expected, "
 			    "segment processed normally\n", s, __func__);
 			free(s, M_TCPLOG);
 		}
@@ -2349,7 +2324,7 @@ tcp_do_segment(struct mbuf *m, struct tcphdr *th, struct socket *so,
 	if ((so->so_state & SS_NOFDREF) &&
 	    tp->t_state > TCPS_CLOSE_WAIT && tlen) {
 		if ((s = tcp_log_addrs(inc, th, NULL, NULL))) {
-			printf( "%s; %s: %s: Received %d bytes of data "
+			log(LOG_DEBUG, "%s; %s: %s: Received %d bytes of data "
 			    "after socket was closed, "
 			    "sending RST and removing tcpcb\n",
 			    s, __func__, tcpstates[tp->t_state], tlen);

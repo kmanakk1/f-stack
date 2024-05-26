@@ -1,0 +1,16 @@
+iptables -t nat -A POSTROUTING -s 10.1.1.2 -j MASQUERADE
+iptables -A FORWARD -i dtap0 -s 10.1.1.2 -j ACCEPT
+iptables -A FORWARD -o dtap0 -d 10.1.1.2 -j ACCEPT 
+
+# bridge
+ip link add name br0 type bridge
+ip link set dtap0 master br0 
+
+
+# netns
+ip link add vethp0 type veth peer name vethp1
+ip netns add ns1
+ip link set dev vethp0 netns ns1
+
+# hugepages
+echo 1024 > /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages

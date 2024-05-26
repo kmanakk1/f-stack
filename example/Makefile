@@ -20,8 +20,9 @@ TARGET="helloworld"
 all:
 	${CC} ${CFLAGS} -DINET6 -o ${TARGET} main.c ${LIBS}
 	${CC} ${CFLAGS}-o ${TARGET}_simple simple.c ${LIBS}
+	${CC} ${CFLAGS}-o netdd netdd.c ${LIBS}
 	${CC} ${CFLAGS} -o ${TARGET}_epoll main_epoll.c ${LIBS}
 
 .PHONY: clean
 clean:
-	rm -f *.o ${TARGET} ${TARGET}_epoll
+	rm -f *.o ${TARGET} ${TARGET}_epoll netdd

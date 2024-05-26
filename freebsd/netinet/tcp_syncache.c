@@ -514,7 +514,7 @@ syncache_timer(void *xsch)
 		}
 		if (sc->sc_rxmits > V_tcp_syncache.rexmt_limit) {
 			if ((s = tcp_log_addrs(&sc->sc_inc, NULL, NULL, NULL))) {
-				printf( "%s; %s: Retransmits exhausted, "
+				log(LOG_DEBUG, "%s; %s: Retransmits exhausted, "
 				    "giving up and removing syncache entry\n",
 				    s, __func__);
 				free(s, M_TCPLOG);
@@ -524,7 +524,7 @@ syncache_timer(void *xsch)
 			continue;
 		}
 		if ((s = tcp_log_addrs(&sc->sc_inc, NULL, NULL, NULL))) {
-			printf( "%s; %s: Response timeout, "
+			log(LOG_DEBUG, "%s; %s: Response timeout, "
 			    "retransmitting (%u) SYN|ACK\n",
 			    s, __func__, sc->sc_rxmits);
 			free(s, M_TCPLOG);
@@ -622,7 +622,7 @@ syncache_chkrst(struct in_conninfo *inc, struct tcphdr *th, struct mbuf *m)
 	 */
 	if (th->th_flags & (TH_ACK|TH_SYN|TH_FIN)) {
 		if ((s = tcp_log_addrs(inc, th, NULL, NULL)))
-			printf( "%s; %s: Spurious RST with ACK, SYN or "
+			log(LOG_DEBUG, "%s; %s: Spurious RST with ACK, SYN or "
 			    "FIN flag set, segment ignored\n", s, __func__);
 		TCPSTAT_INC(tcps_badrst);
 		goto done;
@@ -638,7 +638,7 @@ syncache_chkrst(struct in_conninfo *inc, struct tcphdr *th, struct mbuf *m)
 	 */
 	if (sc == NULL) {
 		if ((s = tcp_log_addrs(inc, th, NULL, NULL)))
-			printf( "%s; %s: Spurious RST without matching "
+			log(LOG_DEBUG, "%s; %s: Spurious RST without matching "
 			    "syncache entry (possibly syncookie only), "
 			    "segment ignored\n", s, __func__);
 		TCPSTAT_INC(tcps_badrst);
@@ -678,7 +678,7 @@ syncache_chkrst(struct in_conninfo *inc, struct tcphdr *th, struct mbuf *m)
 		    th->th_seq == sc->sc_irs + 1) {
 			syncache_drop(sc, sch);
 			if ((s = tcp_log_addrs(inc, th, NULL, NULL)))
-				printf(
+				log(LOG_DEBUG,
 				    "%s; %s: Our SYN|ACK was rejected, "
 				    "connection attempt aborted by remote "
 				    "endpoint\n",
@@ -688,7 +688,7 @@ syncache_chkrst(struct in_conninfo *inc, struct tcphdr *th, struct mbuf *m)
 			TCPSTAT_INC(tcps_badrst);
 			/* Send challenge ACK. */
 			if ((s = tcp_log_addrs(inc, th, NULL, NULL)))
-				printf( "%s; %s: RST with invalid "
+				log(LOG_DEBUG, "%s; %s: RST with invalid "
 				    " SEQ %u != NXT %u (+WND %u), "
 				    "sending challenge ACK\n",
 				    s, __func__,
@@ -697,7 +697,7 @@ syncache_chkrst(struct in_conninfo *inc, struct tcphdr *th, struct mbuf *m)
 		}
 	} else {
 		if ((s = tcp_log_addrs(inc, th, NULL, NULL)))
-			printf( "%s; %s: RST with invalid SEQ %u != "
+			log(LOG_DEBUG, "%s; %s: RST with invalid SEQ %u != "
 			    "NXT %u (+WND %u), segment ignored\n",
 			    s, __func__,
 			    th->th_seq, sc->sc_irs + 1, sc->sc_wnd);
@@ -861,7 +861,7 @@ syncache_socket(struct syncache *sc, struct socket *lso, struct mbuf *m)
 		 */
 		TCPSTAT_INC(tcps_listendrop);
 		if ((s = tcp_log_addrs(&sc->sc_inc, NULL, NULL, NULL))) {
-			printf( "%s; %s: Socket create failed "
+			log(LOG_DEBUG, "%s; %s: Socket create failed "
 			    "due to limits or memory shortage\n",
 			    s, __func__);
 			free(s, M_TCPLOG);
@@ -958,7 +958,7 @@ syncache_socket(struct syncache *sc, struct socket *lso, struct mbuf *m)
 		    thread0.td_ucred, m, false)) != 0) {
 			inp->in6p_laddr = laddr6;
 			if ((s = tcp_log_addrs(&sc->sc_inc, NULL, NULL, NULL))) {
-				printf( "%s; %s: in6_pcbconnect failed "
+				log(LOG_DEBUG, "%s; %s: in6_pcbconnect failed "
 				    "with error %i\n",
 				    s, __func__, error);
 				free(s, M_TCPLOG);
@@ -998,7 +998,7 @@ syncache_socket(struct syncache *sc, struct socket *lso, struct mbuf *m)
 		    thread0.td_ucred, m, false)) != 0) {
 			inp->inp_laddr = laddr;
 			if ((s = tcp_log_addrs(&sc->sc_inc, NULL, NULL, NULL))) {
-				printf( "%s; %s: in_pcbconnect failed "
+				log(LOG_DEBUG, "%s; %s: in_pcbconnect failed "
 				    "with error %i\n",
 				    s, __func__, error);
 				free(s, M_TCPLOG);
@@ -1185,7 +1185,7 @@ syncache_expand(struct in_conninfo *inc, struct tcpopt *to, struct tcphdr *th,
 		if (locked && !V_tcp_syncookies) {
 			SCH_UNLOCK(sch);
 			if ((s = tcp_log_addrs(inc, th, NULL, NULL)))
-				printf( "%s; %s: Spurious ACK, "
+				log(LOG_DEBUG, "%s; %s: Spurious ACK, "
 				    "segment rejected (syncookies disabled)\n",
 				    s, __func__);
 			goto failed;
@@ -1194,7 +1194,7 @@ syncache_expand(struct in_conninfo *inc, struct tcpopt *to, struct tcphdr *th,
 		    sch->sch_last_overflow < time_uptime - SYNCOOKIE_LIFETIME) {
 			SCH_UNLOCK(sch);
 			if ((s = tcp_log_addrs(inc, th, NULL, NULL)))
-				printf( "%s; %s: Spurious ACK, "
+				log(LOG_DEBUG, "%s; %s: Spurious ACK, "
 				    "segment rejected (no syncache entry)\n",
 				    s, __func__);
 			goto failed;
@@ -1205,7 +1205,7 @@ syncache_expand(struct in_conninfo *inc, struct tcpopt *to, struct tcphdr *th,
 			SCH_UNLOCK(sch);
 		if (sc == NULL) {
 			if ((s = tcp_log_addrs(inc, th, NULL, NULL)))
-				printf( "%s; %s: Segment failed "
+				log(LOG_DEBUG, "%s; %s: Segment failed "
 				    "SYNCOOKIE authentication, segment rejected "
 				    "(probably spoofed)\n", s, __func__);
 			goto failed;
@@ -1217,7 +1217,7 @@ syncache_expand(struct in_conninfo *inc, struct tcpopt *to, struct tcphdr *th,
 		    TCPMD5_INPUT(m, th, to->to_signature) != 0)) {
 			/* Drop the ACK. */
 			if ((s = tcp_log_addrs(inc, th, NULL, NULL))) {
-				printf( "%s; %s: Segment rejected, "
+				log(LOG_DEBUG, "%s; %s: Segment rejected, "
 				    "MD5 signature doesn't match.\n",
 				    s, __func__);
 				free(s, M_TCPLOG);
@@ -1240,7 +1240,7 @@ syncache_expand(struct in_conninfo *inc, struct tcpopt *to, struct tcphdr *th,
 				TCPSTAT_INC(tcps_sig_err_nosigopt);
 				SCH_UNLOCK(sch);
 				if ((s = tcp_log_addrs(inc, th, NULL, NULL))) {
-					printf( "%s; %s: Segment "
+					log(LOG_DEBUG, "%s; %s: Segment "
 					    "rejected, MD5 signature wasn't "
 					    "provided.\n", s, __func__);
 					free(s, M_TCPLOG);
@@ -1252,7 +1252,7 @@ syncache_expand(struct in_conninfo *inc, struct tcpopt *to, struct tcphdr *th,
 				/* Doesn't match or no SA */
 				SCH_UNLOCK(sch);
 				if ((s = tcp_log_addrs(inc, th, NULL, NULL))) {
-					printf( "%s; %s: Segment "
+					log(LOG_DEBUG, "%s; %s: Segment "
 					    "rejected, MD5 signature doesn't "
 					    "match.\n", s, __func__);
 					free(s, M_TCPLOG);
@@ -1274,7 +1274,7 @@ syncache_expand(struct in_conninfo *inc, struct tcpopt *to, struct tcphdr *th,
 		    TSTMP_LT(to->to_tsval, sc->sc_tsreflect)) {
 			SCH_UNLOCK(sch);
 			if ((s = tcp_log_addrs(inc, th, NULL, NULL))) {
-				printf(
+				log(LOG_DEBUG,
 				    "%s; %s: SEG.TSval %u < TS.Recent %u, "
 				    "segment dropped\n", s, __func__,
 				    to->to_tsval, sc->sc_tsreflect);
@@ -1292,7 +1292,7 @@ syncache_expand(struct in_conninfo *inc, struct tcpopt *to, struct tcphdr *th,
 		if (!(sc->sc_flags & SCF_TIMESTAMP) &&
 		    (to->to_flags & TOF_TS)) {
 			if ((s = tcp_log_addrs(inc, th, NULL, NULL))) {
-				printf( "%s; %s: Timestamp not "
+				log(LOG_DEBUG, "%s; %s: Timestamp not "
 				    "expected, segment processed normally\n",
 				    s, __func__);
 				free(s, M_TCPLOG);
@@ -1310,7 +1310,7 @@ syncache_expand(struct in_conninfo *inc, struct tcpopt *to, struct tcphdr *th,
 		    !(to->to_flags & TOF_TS)) {
 			if (V_tcp_tolerate_missing_ts) {
 				if ((s = tcp_log_addrs(inc, th, NULL, NULL))) {
-					printf(
+					log(LOG_DEBUG,
 					    "%s; %s: Timestamp missing, "
 					    "segment processed normally\n",
 					    s, __func__);
@@ -1319,7 +1319,7 @@ syncache_expand(struct in_conninfo *inc, struct tcpopt *to, struct tcphdr *th,
 			} else {
 				SCH_UNLOCK(sch);
 				if ((s = tcp_log_addrs(inc, th, NULL, NULL))) {
-					printf(
+					log(LOG_DEBUG,
 					    "%s; %s: Timestamp missing, "
 					    "segment silently dropped\n",
 					    s, __func__);
@@ -1357,7 +1357,7 @@ syncache_expand(struct in_conninfo *inc, struct tcpopt *to, struct tcphdr *th,
 	 */
 	if (th->th_ack != sc->sc_iss + 1) {
 		if ((s = tcp_log_addrs(inc, th, NULL, NULL)))
-			printf( "%s; %s: ACK %u != ISS+1 %u, segment "
+			log(LOG_DEBUG, "%s; %s: ACK %u != ISS+1 %u, segment "
 			    "rejected\n", s, __func__, th->th_ack, sc->sc_iss);
 		goto failed;
 	}
@@ -1369,7 +1369,7 @@ syncache_expand(struct in_conninfo *inc, struct tcpopt *to, struct tcphdr *th,
 	if (SEQ_LEQ(th->th_seq, sc->sc_irs) ||
 	    SEQ_GT(th->th_seq, sc->sc_irs + sc->sc_wnd)) {
 		if ((s = tcp_log_addrs(inc, th, NULL, NULL)))
-			printf( "%s; %s: SEQ %u != IRS+1 %u, segment "
+			log(LOG_DEBUG, "%s; %s: SEQ %u != IRS+1 %u, segment "
 			    "rejected\n", s, __func__, th->th_seq, sc->sc_irs);
 		goto failed;
 	}
@@ -1446,7 +1446,6 @@ syncache_add(struct in_conninfo *inc, struct tcpopt *to, struct tcphdr *th,
     struct inpcb *inp, struct socket **lsop, struct mbuf *m, void *tod,
     void *todctx, uint8_t iptos)
 {
-	printf("syncache_add\n");
 	struct tcpcb *tp;
 	struct socket *so;
 	struct syncache *sc = NULL;
@@ -1634,17 +1633,15 @@ syncache_add(struct in_conninfo *inc, struct tcpopt *to, struct tcphdr *th,
 		 */
 		mac_syncache_destroy(&maclabel);
 #endif
-		printf("TCP_PROBE5\n");
 		TCP_PROBE5(receive, NULL, NULL, m, NULL, th);
 		/* Retransmit SYN|ACK and reset retransmit count. */
 		if ((s = tcp_log_addrs(&sc->sc_inc, th, NULL, NULL))) {
-			printf( "%s; %s: Received duplicate SYN, "
+			log(LOG_DEBUG, "%s; %s: Received duplicate SYN, "
 			    "resetting timer and retransmitting SYN|ACK\n",
 			    s, __func__);
 			free(s, M_TCPLOG);
 		}
 		if (syncache_respond(sc, m, TH_SYN|TH_ACK) == 0) {
-			printf("sent ack\n");
 			sc->sc_rxmits = 0;
 			syncache_timeout(sc, sch, 1);
 			TCPSTAT_INC(tcps_sndacks);
@@ -1699,7 +1696,6 @@ syncache_add(struct in_conninfo *inc, struct tcpopt *to, struct tcphdr *th,
 	}
 
 skip_alloc:
-	printf("skip alloc\n");
 	if (!tfo_cookie_valid && tfo_response_cookie_valid)
 		sc->sc_tfo_cookie = &tfo_response_cookie;
 
@@ -1819,9 +1815,7 @@ skip_alloc:
 	/*
 	 * Do a standard 3-way handshake.
 	 */
-	printf("3way shake\n");
 	if (syncache_respond(sc, m, TH_SYN|TH_ACK) == 0) {
-		printf("worked\n");
 		if (V_tcp_syncookies && V_tcp_syncookiesonly && sc != &scs)
 			syncache_free(sc);
 		else if (sc != &scs)
@@ -1836,10 +1830,8 @@ skip_alloc:
 	goto donenoprobe;
 
 done:
-	printf("syncache_add: done\n");
 	TCP_PROBE5(receive, NULL, NULL, m, NULL, th);
 donenoprobe:
-	printf("syncache_add: donenoprobe\n");
 	if (m) {
 		*lsop = NULL;
 		m_freem(m);
@@ -1870,7 +1862,6 @@ tfo_expanded:
 static int
 syncache_respond(struct syncache *sc, const struct mbuf *m0, int flags)
 {
-	printf("syncache_respond\n");
 	struct ip *ip = NULL;
 	struct mbuf *m;
 	struct tcphdr *th = NULL;
@@ -2408,21 +2399,21 @@ syncookie_cmp(struct in_conninfo *inc, struct syncache_head *sch,
 
 	if (scx != NULL) {
 		if (sc->sc_peer_mss != scx->sc_peer_mss)
-			printf( "%s; %s: mss different %i vs %i\n",
+			log(LOG_DEBUG, "%s; %s: mss different %i vs %i\n",
 			    s, __func__, sc->sc_peer_mss, scx->sc_peer_mss);
 
 		if (sc->sc_requested_r_scale != scx->sc_requested_r_scale)
-			printf( "%s; %s: rwscale different %i vs %i\n",
+			log(LOG_DEBUG, "%s; %s: rwscale different %i vs %i\n",
 			    s, __func__, sc->sc_requested_r_scale,
 			    scx->sc_requested_r_scale);
 
 		if (sc->sc_requested_s_scale != scx->sc_requested_s_scale)
-			printf( "%s; %s: swscale different %i vs %i\n",
+			log(LOG_DEBUG, "%s; %s: swscale different %i vs %i\n",
 			    s, __func__, sc->sc_requested_s_scale,
 			    scx->sc_requested_s_scale);
 
 		if ((sc->sc_flags & SCF_SACK) != (scx->sc_flags & SCF_SACK))
-			printf( "%s; %s: SACK different\n", s, __func__);
+			log(LOG_DEBUG, "%s; %s: SACK different\n", s, __func__);
 	}
 
 	if (s != NULL)
