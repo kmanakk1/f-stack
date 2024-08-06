@@ -71,7 +71,7 @@ int loop(void *arg)
         } else if (event.filter == EVFILT_READ) {
             ssize_t readlen = ff_read(clientfd, buf, sizeof(buf));
             ssize_t writelen = ff_write(clientfd, buf, sizeof(buf));
-            if (writelen < 0){
+            if (writelen < 0) {
                 printf("ff_write failed:%d, %s\n", errno,
                     strerror(errno));
                 //ff_close(clientfd);

@@ -6,7 +6,6 @@ iptables -A FORWARD -o dtap0 -d 10.1.1.2 -j ACCEPT
 ip link add name br0 type bridge
 ip link set dtap0 master br0 
 
-
 # netns
 ip link add vethp0 type veth peer name vethp1
 ip netns add ns1
