@@ -720,25 +720,6 @@ kern_fail:
     return (-1);
 }
 
-//sys_socketpair(struct thread *td, struct socketpair_args *uap)
-int
-ff_socketpair(int domain, int type, int protocol, int *rsv)
-{
-    int rc;
-    struct socketpair_args sa;
-    sa.domain = domain;
-    sa.type = type;
-    sa.protocol = protocol;
-    sa.rsv = rsv;
-    if ((rc = sys_socketpair(curthread, &sa)))
-        goto kern_fail;
-
-    return curthread->td_retval[0];
-kern_fail:
-    ff_os_errno(rc);
-    return (-1);
-}
-
 int
 ff_getsockopt(int s, int level, int optname, void *optval,
     socklen_t *optlen)
