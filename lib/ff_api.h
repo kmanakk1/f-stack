@@ -74,6 +74,7 @@ int ff_ioctl(int fd, unsigned long request, ...);
  *  See also `example/main.c`
  */
 int ff_socket(int domain, int type, int protocol);
+int ff_socketpair(int domain, int type, int protocol, int *rsv);
 
 int ff_setsockopt(int s, int level, int optname, const void *optval,
     socklen_t optlen);
