@@ -9,8 +9,11 @@
 *.pcap
 dpdk/x86_64-native-linuxapp-gcc/
 dpdk/build/
+dpdk/clean/
 example/helloworld
 example/helloworld_epoll
+example/helloworld_udp_server
+example/helloworld_udp_server_syn
 lib/bus_if.h
 lib/cryptodev_if.c
 lib/cryptodev_if.h

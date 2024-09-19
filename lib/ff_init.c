@@ -39,7 +39,6 @@ ff_init(int argc, char * const argv[])
     ret = ff_load_config(argc, argv);
     if (ret < 0)
         exit(1);
-
     ret = ff_dpdk_init(dpdk_argc, (char **)&dpdk_argv);
     if (ret < 0)
         exit(1);

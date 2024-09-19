@@ -2015,7 +2015,6 @@ main_loop(void *arg)
         if (unlikely(freebsd_clock.expire < cur_tsc)) {
             rte_timer_manage();
         }
-
         idle = 1;
         sys_tsc = 0;
         usr_tsc = 0;
@@ -2041,7 +2040,7 @@ main_loop(void *arg)
 
             prev_tsc = cur_tsc;
         }
-
+        
         /*
          * Read packet from RX queues
          */
@@ -2059,9 +2058,12 @@ main_loop(void *arg)
             idle &= !process_dispatch_ring(port_id, queue_id, pkts_burst, ctx);
 
             nb_rx = rte_eth_rx_burst(port_id, queue_id, pkts_burst,
-                MAX_PKT_BURST);
+                32);
             if (nb_rx == 0)
+            {
                 continue;
+            }
+                
 
             idle = 0;
 
@@ -2110,7 +2112,7 @@ main_loop(void *arg)
             sys_tsc = div_tsc - cur_tsc - usr_cb_tsc;
             ff_top_status.sys_tsc += sys_tsc;
         }
-
+        //原本
         ff_top_status.usr_tsc += usr_tsc;
         ff_top_status.work_tsc += end_tsc - cur_tsc;
         ff_top_status.idle_tsc += end_tsc - cur_tsc - usr_tsc - sys_tsc;
