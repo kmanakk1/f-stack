@@ -1,4 +1,9 @@
-#define NGX_CONFIGURE " --prefix=/usr/local/nginx_fstack --with-ff_module"
+#define NGX_CONFIGURE " --prefix=/usr/local/nginx_fstack --with-ff_module --with-debug --with-cc-opt='-O0 -g'"
+
+#ifndef NGX_DEBUG
+#define NGX_DEBUG  1
+#endif
+
 
 #ifndef NGX_COMPILER
 #define NGX_COMPILER  "gcc 11.4.0 (Ubuntu 11.4.0-1ubuntu1~22.04) "

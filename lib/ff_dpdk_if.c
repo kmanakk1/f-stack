@@ -54,6 +54,8 @@
 #include <rte_udp.h>
 #include <rte_eth_bond.h>
 #include <rte_eth_bond_8023ad.h>
+#include <rte_gro.h>
+#include <rte_net.h>
 
 #include "ff_dpdk_if.h"
 #include "ff_dpdk_pcap.h"
@@ -2057,13 +2059,30 @@ main_loop(void *arg)
 
             idle &= !process_dispatch_ring(port_id, queue_id, pkts_burst, ctx);
 
-            nb_rx = rte_eth_rx_burst(port_id, queue_id, pkts_burst,
-                32);
+            nb_rx = rte_eth_rx_burst(port_id, queue_id, pkts_burst,32);
             if (nb_rx == 0)
             {
                 continue;
             }
-                
+            int gro_on = 1;
+            if(gro_on == 1){
+                    struct rte_gro_param x ={
+                    .gro_types = RTE_GRO_TCP_IPV4,
+                    .max_flow_num = 20,
+                    .max_item_per_flow = 300,
+                    .socket_id = 0
+                };
+
+                for(int y= 0; y < nb_rx; y++)
+                {
+                    struct rte_net_hdr_lens hdr_lens;
+                    rte_net_get_ptype(pkts_burst[y], &hdr_lens, RTE_PTYPE_ALL_MASK);
+                    pkts_burst[y]->l2_len = hdr_lens.l2_len;
+                    pkts_burst[y]->l3_len = hdr_lens.l3_len;
+                    pkts_burst[y]->l4_len = hdr_lens.l4_len;
+                }
+                nb_rx = rte_gro_reassemble_burst(pkts_burst, nb_rx, &x);
+            }
 
             idle = 0;
 

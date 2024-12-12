@@ -53,6 +53,12 @@
 #include <net/if_var.h>
 #include <netinet/in_var.h>
 
+#include <sys/fcntl.h>
+#include <sys/unistd.h>
+#include <sys/mman.h>
+
+
+
 int lo_set_defaultaddr(void);
 
 int ff_freebsd_init(void);
@@ -73,6 +79,7 @@ extern cpuset_t all_cpus;
 long physmem;
 
 extern void uma_startup1(vm_offset_t);
+
 
 int lo_set_defaultaddr(void)
 {
@@ -157,6 +164,7 @@ ff_freebsd_init(void)
 
     boot_pages = 16;
     bootmem = (void *)kmem_malloc(boot_pages*PAGE_SIZE, M_ZERO);
+    
     //uma_startup(bootmem, boot_pages);
     uma_startup1((vm_offset_t)bootmem);
     uma_startup2();

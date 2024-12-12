@@ -1,11 +1,11 @@
-set 2 size 64 
-set 2 src ip 192.168.182.6/32 
-set 2 dst ip 192.168.182.5
-set 2 dst mac 08:c0:eb:aa:37:b8
-set 2 dport 8080
-set 2 proto udp
-set 2 count 10000000000000  
-set 2 rate 10
+set 0 size 1500
+set 0 src ip 192.168.182.4/32 
+set 0 dst ip 192.168.182.3
+set 0 dst mac 08:c0:eb:aa:37:b8
+set 0 dport 8080
+set 0 proto udp
+set 0 count 10000000000000  
+set 0 rate 10
 
-./pktgen -l 4-5 -n 4 --file-prefix="pktgen" -- -P -m 5.2
-
+# ./pktgen -l 4-5 -n 4 --file-prefix="pktgen" -- -P -m 5.2
+./pktgen -l 4-5 -n 4 --file-prefix="pktgen" -- -P -m 5.0

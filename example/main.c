@@ -100,6 +100,7 @@ int loop(void *arg)
                 continue;
             }
             pktcount++;
+            // printf("len:%ld\n",readlen);
             /* get start time */
             if(recv_bytes == 0)
             {
@@ -127,7 +128,7 @@ int loop(void *arg)
                 ff_close(clientfd);
                 printf("Connection down\n");
             }
-            // printf("read length:%d\n", readlen);s
+            // printf("read length:%d\n", readlen);
             // printf("%s\n",buf);
         } else {
             printf("unknown event: %8.8X\n", event.flags);
@@ -176,10 +177,10 @@ int main(int argc, char * argv[])
         printf("ff_bind failed, sockfd:%d, errno:%d, %s\n", sockfd, errno, strerror(errno));
         exit(1);
     }
-    int max_meg = 3000;
+    int max_meg = 1500;
     ret = ff_setsockopt(sockfd, IPPROTO_TCP, TCP_MAXSEG, &max_meg, sizeof(max_meg));
 
-     ret = ff_listen(sockfd, MAX_EVENTS);
+    ret = ff_listen(sockfd, MAX_EVENTS);
     if (ret < 0) {
         printf("ff_listen failed, sockfd:%d, errno:%d, %s\n", sockfd, errno, strerror(errno));
         exit(1);
@@ -195,7 +196,7 @@ int main(int argc, char * argv[])
     ff_getsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, &rcvbuf_actual, &optlen);
     ff_getsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, &sndbuf_actual, &optlen);
     ff_getsockopt(sockfd, IPPROTO_TCP, TCP_MAXSEG, &mss_actual, &optlen);
-    printf("RCVBUF:%d\nSNDBUF:%d\nMSS:%d\n", rcvbuf_actual, sndbuf_actual,mss_actual);
+    printf("RCVBUF:%d\nSNDBUF:%d\nMSS:%d\n", rcvbuf_actual, sndbuf_actual, mss_actual);
 
     signal(SIGALRM, handle_alarm);
     alarm(5);

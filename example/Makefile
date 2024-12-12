@@ -10,7 +10,7 @@ endif
 
 PKGCONF ?= pkg-config
 
-CFLAGS += -O0 -g -gdwarf-2 $(shell $(PKGCONF) --cflags libdpdk)
+# CFLAGS += -O0 -g -gdwarf-2 $(shell $(PKGCONF) --cflags libdpdk)
 
 LIBS+= $(shell $(PKGCONF) --static --libs libdpdk)
 LIBS+= -L${FF_PATH}/lib -Wl,--whole-archive,-lfstack,--no-whole-archive
@@ -18,10 +18,10 @@ LIBS+= -Wl,--no-whole-archive -lrt -lm -ldl -lcrypto -pthread -lnuma
 
 TARGET="helloworld"
 all:
-	cc ${CFLAGS} -DINET6 -o ${TARGET} main.c ${LIBS}
-	#cc ${CFLAGS} -o ${TARGET}_epoll main_epoll.c ${LIBS}
-	# cc ${CFLAGS} -o ${TARGET}_udp_server udp_server.c ${LIBS}
-	# cc ${CFLAGS} -o ${TARGET}_udp_server_syn udp_server_syn.c ${LIBS}
+	cc ${CFLAGS} -DINET6 -o ./objs/${TARGET} main.c ${LIBS}
+	# cc ${CFLAGS} -o ./objs/${TARGET}_epoll main_epoll.c ${LIBS}
+	# cc ${CFLAGS} -o ./objs/${TARGET}_udp_server udp_server.c ${LIBS}
+	# cc ${CFLAGS} -o ./objs/${TARGET}_udp_server_syn udp_server_syn.c ${LIBS}
 .PHONY: clean
 clean:
-	rm -f *.o ${TARGET} ${TARGET}_epoll
+	rm -f *.o ./objs/*

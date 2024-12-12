@@ -223,7 +223,7 @@ gro_tcp4_reassemble(struct rte_mbuf *pkt,
 	 * Don't process the packet which has FIN, SYN, RST, PSH, URG, ECE
 	 * or CWR set.
 	 */
-	if (tcp_hdr->tcp_flags != RTE_TCP_ACK_FLAG)
+	if (tcp_hdr->tcp_flags != RTE_TCP_ACK_FLAG && tcp_hdr->tcp_flags != (RTE_TCP_ACK_FLAG | RTE_TCP_PSH_FLAG))
 		return -1;
 
 	/* trim the tail padding bytes */

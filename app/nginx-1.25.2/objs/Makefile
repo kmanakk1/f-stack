@@ -1,6 +1,6 @@
 
 CC =	cc
-CFLAGS =  -pipe  -Os -W -Wall -Wpointer-arith -Wno-unused-parameter -Werror -g 
+CFLAGS =  -pipe  -Os -W -Wall -Wpointer-arith -Wno-unused-parameter -Werror -g -O0 -g 
 CPP =	cc -E
 LINK =	$(CC)
 
