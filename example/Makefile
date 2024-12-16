@@ -22,6 +22,8 @@ all:
 	# cc ${CFLAGS} -o ./objs/${TARGET}_epoll main_epoll.c ${LIBS}
 	# cc ${CFLAGS} -o ./objs/${TARGET}_udp_server udp_server.c ${LIBS}
 	# cc ${CFLAGS} -o ./objs/${TARGET}_udp_server_syn udp_server_syn.c ${LIBS}
+	# ${CC} ${CFLAGS}-o ${TARGET}_simple simple.c ${LIBS}
+	# ${CC} ${CFLAGS}-o netdd netdd.c ${LIBS}
 .PHONY: clean
 clean:
 	rm -f *.o ./objs/* netdd
