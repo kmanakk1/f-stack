@@ -32,8 +32,9 @@ main(int argc, char **argv)
 {
 	int ret;
 	unsigned lcore_id;
-
+	printf("hello before eal\n");
 	ret = rte_eal_init(argc, argv);
+	printf("hello from eal\n");
 	if (ret < 0)
 		rte_panic("Cannot init EAL\n");
 	/* >8 End of initialization of Environment Abstraction Layer */

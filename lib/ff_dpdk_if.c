@@ -54,6 +54,8 @@
 #include <rte_udp.h>
 #include <rte_eth_bond.h>
 #include <rte_eth_bond_8023ad.h>
+#include <rte_gro.h>
+#include <rte_net.h>
 
 #include "ff_dpdk_if.h"
 #include "ff_dpdk_pcap.h"
@@ -80,6 +82,7 @@ static int numa_on;
 static unsigned idle_sleep;
 static unsigned pkt_tx_delay;
 static uint64_t usr_cb_tsc;
+static int stop_loop;
 
 static struct rte_timer freebsd_clock;
 
@@ -2052,11 +2055,15 @@ main_loop(void *arg)
     qconf = &lcore_conf;
 
     while (1) {
+
+        if (unlikely(stop_loop)) {
+            break;
+        }
+
         cur_tsc = rte_rdtsc();
         if (unlikely(freebsd_clock.expire < cur_tsc)) {
             rte_timer_manage();
         }
-
         idle = 1;
         sys_tsc = 0;
         usr_tsc = 0;
@@ -2082,7 +2089,7 @@ main_loop(void *arg)
 
             prev_tsc = cur_tsc;
         }
-
+        
         /*
          * Read packet from RX queues
          */
@@ -2099,10 +2106,30 @@ main_loop(void *arg)
 
             idle &= !process_dispatch_ring(port_id, queue_id, pkts_burst, ctx);
 
-            nb_rx = rte_eth_rx_burst(port_id, queue_id, pkts_burst,
-                MAX_PKT_BURST);
+            nb_rx = rte_eth_rx_burst(port_id, queue_id, pkts_burst,32);
             if (nb_rx == 0)
+            {
                 continue;
+            }
+            int gro_on = 1;
+            if(gro_on == 1){
+                    struct rte_gro_param x ={
+                    .gro_types = RTE_GRO_TCP_IPV4,
+                    .max_flow_num = 20,
+                    .max_item_per_flow = 300,
+                    .socket_id = 0
+                };
+
+                for(int y= 0; y < nb_rx; y++)
+                {
+                    struct rte_net_hdr_lens hdr_lens;
+                    rte_net_get_ptype(pkts_burst[y], &hdr_lens, RTE_PTYPE_ALL_MASK);
+                    pkts_burst[y]->l2_len = hdr_lens.l2_len;
+                    pkts_burst[y]->l3_len = hdr_lens.l3_len;
+                    pkts_burst[y]->l4_len = hdr_lens.l4_len;
+                }
+                nb_rx = rte_gro_reassemble_burst(pkts_burst, nb_rx, &x);
+            }
             
             if(ff_global_cfg.dpdk.log_level > 2) {
                 printf("RX: %d\n", nb_rx);
@@ -2155,7 +2182,7 @@ main_loop(void *arg)
             sys_tsc = div_tsc - cur_tsc - usr_cb_tsc;
             ff_top_status.sys_tsc += sys_tsc;
         }
-
+        //原本
         ff_top_status.usr_tsc += usr_tsc;
         ff_top_status.work_tsc += end_tsc - cur_tsc;
         ff_top_status.idle_tsc += end_tsc - cur_tsc - usr_tsc - sys_tsc;
@@ -2187,11 +2214,17 @@ void
 ff_dpdk_run(loop_func_t loop, void *arg) {
     struct loop_routine *lr = rte_malloc(NULL,
         sizeof(struct loop_routine), 0);
+    stop_loop = 0;
     lr->loop = loop;
     lr->arg = arg;
     rte_eal_mp_remote_launch(main_loop, lr, CALL_MAIN);
     rte_eal_mp_wait_lcore();
     rte_free(lr);
+}
+
+void
+ff_dpdk_stop(void) {
+    stop_loop = 1;
 }
 
 void

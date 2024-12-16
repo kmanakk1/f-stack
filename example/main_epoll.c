@@ -70,7 +70,11 @@ int loop(void *arg)
         if (events[i].data.fd == sockfd) {
             while (1) {
                 int nclientfd = ff_accept(sockfd, NULL, NULL);
+                printf("hello from epoll accept\n");
+
                 if (nclientfd < 0) {
+                    printf("hello from epoll accept fail\n");
+
                     break;
                 }
 
@@ -90,6 +94,7 @@ int loop(void *arg)
                 ff_close(events[i].data.fd);
             } else if (events[i].events & EPOLLIN) {
                 char buf[256];
+                printf("hello from epoll read\n");
                 size_t readlen = ff_read( events[i].data.fd, buf, sizeof(buf));
                 if(readlen > 0) {
                     ff_write( events[i].data.fd, html, sizeof(html) - 1);

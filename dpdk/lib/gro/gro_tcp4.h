@@ -279,10 +279,10 @@ check_seq_option(struct gro_tcp4_item *item,
 
 	/* Check if TCP option fields equal */
 	len = RTE_MAX(tcp_hl, tcp_hl_orig) - sizeof(struct rte_tcp_hdr);
-	if ((tcp_hl != tcp_hl_orig) || ((len > 0) &&
-				(memcmp(tcph + 1, tcph_orig + 1,
-					len) != 0)))
-		return 0;
+	// if ((tcp_hl != tcp_hl_orig) || ((len > 0) &&
+	// 			(memcmp(tcph + 1, tcph_orig + 1,
+	// 				len) != 0)))
+	// 	return 0;
 
 	/* Don't merge packets whose DF bits are different */
 	if (unlikely(item->is_atomic ^ is_atomic))

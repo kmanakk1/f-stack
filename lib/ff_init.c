@@ -41,7 +41,6 @@ ff_init(int argc, char * const argv[])
     ret = ff_load_config(argc, argv);
     if (ret < 0)
         exit(1);
-
     //dpdk_argv[dpdk_argc++] = strdup("--vdev=net_tap,iface=dtap0,remote=vethp1");
 
     printf("DPDK_argv: ");
@@ -79,40 +78,9 @@ ff_run(loop_func_t loop, void *arg)
     ff_dpdk_run(loop, arg);
 }
 
-/*int
-ff_modded_init(int argc, char * const argv[], int dargc, const char **dpdk_addargs)
+void
+ff_stop_run(void)
 {
-    int ret;
-    ret = ff_load_config(argc, argv);
-    if (ret < 0)
-        exit(1);
+    ff_dpdk_stop();
+}
 
-    // add additional dpdk args
-    for(int i=0; i<dargc; i++)
-        dpdk_argv[dpdk_argc++] = strdup(dpdk_addargs[i]);
-    
-    printf("DPDK_argv: ");
-    for(int x=0; x<dpdk_argc; x++) {
-        printf(" %s ", dpdk_argv[x]);
-    }
-    printf("\n");
-
-    ret = ff_dpdk_init(dpdk_argc, (char **)&dpdk_argv);
-    if (ret < 0) {
-        printf("error initializing dpdk\n");
-        exit(1);
-    }
-    printf("dpdk initialized\n");
-    ret = ff_freebsd_init();
-    if (ret < 0){
-        printf("error initializing freebsd\n");
-        exit(1);
-    }
-    ret = ff_dpdk_if_up();
-    if (ret < 0){
-        printf("error initializing net interface\n");
-        exit(1);
-    }
-
-    return 0;
-}*/
