@@ -178,6 +178,7 @@ ff_dpdk_deregister_if(struct ff_dpdk_if_context *ctx)
     free(ctx);
 }
 
+/*
 static void print_nic_stats() {
     struct rte_eth_stats stats;
     uint16_t port_id;
@@ -210,6 +211,7 @@ static void print_nic_stats() {
             "%-"PRIu64"\n", stats.opackets, stats.oerrors, stats.obytes);
     }
 }
+*/
 static void
 check_all_ports_link_status(void)
 {
@@ -2106,13 +2108,13 @@ main_loop(void *arg)
 
             idle &= !process_dispatch_ring(port_id, queue_id, pkts_burst, ctx);
 
-            nb_rx = rte_eth_rx_burst(port_id, queue_id, pkts_burst,32);
+            nb_rx = rte_eth_rx_burst(port_id, queue_id, pkts_burst, 32);
             if (nb_rx == 0)
             {
                 continue;
             }
-            int gro_on = 1;
-            if(gro_on == 1){
+            int gro_on = 0;
+            if((gro_on == 1) && (nb_rx > 8)) {
                     struct rte_gro_param x ={
                     .gro_types = RTE_GRO_TCP_IPV4,
                     .max_flow_num = 20,
@@ -2133,7 +2135,7 @@ main_loop(void *arg)
             
             if(ff_global_cfg.dpdk.log_level > 2) {
                 printf("RX: %d\n", nb_rx);
-                print_nic_stats();
+                //print_nic_stats();
             }
             idle = 0;
 

@@ -710,6 +710,7 @@ uipc_bind(struct socket *so, struct sockaddr *nam, struct thread *td)
 static int
 uipc_connect(struct socket *so, struct sockaddr *nam, struct thread *td)
 {
+	printf("uipc_connect\n");
 	int error;
 
 	KASSERT(td == curthread, ("uipc_connect: td != curthread"));
@@ -1499,6 +1500,7 @@ static int
 unp_connectat(int fd, struct socket *so, struct sockaddr *nam,
     struct thread *td)
 {
+	printf("[!!] unp_connectat\n");
 	struct mtx *vplock;
 	struct sockaddr_un *soun;
 	struct vnode *vp;
@@ -1513,11 +1515,15 @@ unp_connectat(int fd, struct socket *so, struct sockaddr *nam,
 
 	if (nam->sa_family != AF_UNIX)
 		return (EAFNOSUPPORT);
-	if (nam->sa_len > sizeof(struct sockaddr_un))
+	if (nam->sa_len > sizeof(struct sockaddr_un)) {
+		printf("[!!] EINVAL: sa_len too long\n");
 		return (EINVAL);
+	}
 	len = nam->sa_len - offsetof(struct sockaddr_un, sun_path);
-	if (len <= 0)
+	if (len <= 0) {
+		printf("[!!] EINVAL: nam->sa_len (%d) - offset (%d) <= 0", nam->sa_len, offsetof(struct sockaddr_un, sun_path));
 		return (EINVAL);
+	}
 	soun = (struct sockaddr_un *)nam;
 	bcopy(soun->sun_path, buf, len);
 	buf[len] = 0;
@@ -1642,6 +1648,7 @@ unp_connectat(int fd, struct socket *so, struct sockaddr *nam,
 	    ("%s: unp2 %p so2 %p", __func__, unp2, so2));
 	error = unp_connect2(so, so2, PRU_CONNECT);
 	unp_pcb_unlock_pair(unp, unp2);
+	printf("unp_connect error: %d\n", error);
 bad2:
 	mtx_unlock(vplock);
 bad:

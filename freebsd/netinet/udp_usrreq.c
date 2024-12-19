@@ -1654,6 +1654,7 @@ udp_close(struct socket *so)
 static int
 udp_connect(struct socket *so, struct sockaddr *nam, struct thread *td)
 {
+	printf("[!!] udp_connect\n");
 	struct epoch_tracker et;
 	struct inpcb *inp;
 	struct inpcbinfo *pcbinfo;

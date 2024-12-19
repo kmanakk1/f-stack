@@ -485,6 +485,7 @@ sys_connect(struct thread *td, struct connect_args *uap)
 int
 kern_connectat(struct thread *td, int dirfd, int fd, struct sockaddr *sa)
 {
+	printf("[!!] kern_connectat\n");
 	struct socket *so;
 	struct file *fp;
 	int error, interrupted = 0;

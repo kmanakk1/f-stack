@@ -1313,12 +1313,15 @@ soconnect(struct socket *so, struct sockaddr *nam, struct thread *td)
 int
 soconnectat(int fd, struct socket *so, struct sockaddr *nam, struct thread *td)
 {
+	printf("[!!] soconnectat\n");
 	int error;
 
 	if (so->so_options & SO_ACCEPTCONN)
 		return (EOPNOTSUPP);
 
 	CURVNET_SET(so->so_vnet);
+
+	printf("[++] curvnet_set\n");
 	/*
 	 * If protocol is connection-based, can only connect once.
 	 * Otherwise, if connected, try to disconnect first.  This allows
@@ -1335,8 +1338,10 @@ soconnectat(int fd, struct socket *so, struct sockaddr *nam, struct thread *td)
 		 */
 		so->so_error = 0;
 		if (fd == AT_FDCWD) {
+			printf("[++] pru_connect\n");
 			error = (*so->so_proto->pr_usrreqs->pru_connect)(so,
 			    nam, td);
+
 		} else {
 			error = (*so->so_proto->pr_usrreqs->pru_connectat)(fd,
 			    so, nam, td);
@@ -1361,6 +1366,7 @@ soconnect2(struct socket *so1, struct socket *so2)
 int
 sodisconnect(struct socket *so)
 {
+	printf("[!!] sodisconnect\n");
 	int error;
 
 	if ((so->so_state & SS_ISCONNECTED) == 0)

@@ -1219,6 +1219,7 @@ ff_connect(int s, const struct linux_sockaddr *name, socklen_t namelen)
     struct sockaddr_storage bsdaddr;
     linux2freebsd_sockaddr(name, namelen, (struct sockaddr *)&bsdaddr);
 
+    printf("[!!] ff_connect\n");
     if ((rc = kern_connectat(curthread, AT_FDCWD, s, (struct sockaddr *)&bsdaddr)))
         goto kern_fail;
 

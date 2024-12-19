@@ -1082,6 +1082,7 @@ int
 in_pcbconnect_mbuf(struct inpcb *inp, struct sockaddr *nam,
     struct ucred *cred, struct mbuf *m, bool rehash)
 {
+	printf("[!!] in_pcbconnect_mbuf\n");
 	u_short lport, fport;
 	in_addr_t laddr, faddr;
 	int anonport, error;
@@ -1361,6 +1362,7 @@ in_pcbconnect_setup(struct inpcb *inp, struct sockaddr *nam,
     in_addr_t *laddrp, u_short *lportp, in_addr_t *faddrp, u_short *fportp,
     struct inpcb **oinpp, struct ucred *cred)
 {
+	printf("in_pcbconnect_setup\n");
 	struct rm_priotracker in_ifa_tracker;
 	struct sockaddr_in *sin = (struct sockaddr_in *)nam;
 	struct in_ifaddr *ia;
@@ -1377,6 +1379,7 @@ in_pcbconnect_setup(struct inpcb *inp, struct sockaddr *nam,
 	INP_LOCK_ASSERT(inp);
 	INP_HASH_LOCK_ASSERT(inp->inp_pcbinfo);
 
+	printf("nam->sa_len=%d, sizeshouldbe=%ld\n", nam->sa_len, sizeof(*sin));
 	if (oinpp != NULL)
 		*oinpp = NULL;
 	if (nam->sa_len != sizeof (*sin))
