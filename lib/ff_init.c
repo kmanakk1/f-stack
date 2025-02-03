@@ -44,9 +44,10 @@ ff_init(int argc, char * const argv[])
 
     //dpdk_argv[dpdk_argc++] = strdup("--vdev=net_tap,iface=dtap0,remote=vethp1");
 
-    // run as user
-    dpdk_argv[dpdk_argc++] = strdup("--in-memory");
-    
+    // run as user (not working)
+    //dpdk_argv[dpdk_argc++] = strdup("--in-memory");
+    //dpdk_argv[dpdk_argc++] = strdup("--iova-mode=va");
+
     printf("DPDK_argv: ");
     for(int x=0; x<dpdk_argc; x++) {
         printf(" %s ", dpdk_argv[x]);
